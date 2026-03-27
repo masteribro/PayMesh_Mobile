@@ -116,7 +116,7 @@ class PayMeshApp extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),

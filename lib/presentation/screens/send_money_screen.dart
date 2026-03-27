@@ -198,7 +198,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                   controller: _descriptionController,
                   decoration: const InputDecoration(
                     hintText: 'Add a note for this transaction',
-                    maxLines: 3,
+                    hintMaxLines: 3,
                   ),
                 ),
 
