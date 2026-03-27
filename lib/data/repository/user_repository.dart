@@ -51,7 +51,7 @@ class UserRepository {
       await localDataSource.saveUser(updatedUser!);
       return AppResult.success(updatedUser);
     } catch (e) {
-      return AppResult.error(AppException.fromException(e));
+      return AppResult.failure(AppException.fromException(e));
     }
   }
 
