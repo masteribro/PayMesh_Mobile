@@ -32,10 +32,10 @@ class UserRepository {
         final cachedUser = await localDataSource.getUser();
         return AppResult.success(cachedUser!);
       } catch (_) {
-        return AppResult.error?.call(e);
+        return AppResult.error(e);
       }
     } catch (e) {
-      return AppResult.error?.call(AppException.fromException(e));
+      return AppResult.error(AppException.fromException(e));
     }
   }
 
@@ -62,7 +62,7 @@ class UserRepository {
       final user = await localDataSource.getUser(userId);
       return AppResult.success(user!);
     } catch (e) {
-      return AppResult.error?.call(AppException.fromException(e));
+      return AppResult.error(AppException.fromException(e));
     }
   }
 
@@ -109,7 +109,7 @@ class UserRepository {
       await localDataSource.deleteUser(userId);
       return AppResult.success(null);
     } catch (e) {
-      return AppResult.error?.call(AppException.fromException(e));
+      return AppResult.error(AppException.fromException(e));
     }
   }
 }
