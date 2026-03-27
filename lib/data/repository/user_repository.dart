@@ -32,10 +32,10 @@ class UserRepository {
         final cachedUser = await localDataSource.getUser();
         return AppResult.success(cachedUser!);
       } catch (_) {
-        return AppResult.error(e);
+        return AppResult.failure(e);
       }
     } catch (e) {
-      return AppResult.error(AppException.fromException(e));
+      return AppResult.failure(AppException.fromException(e));
     }
   }
 
@@ -59,10 +59,10 @@ class UserRepository {
   /// Used for quick access without network call
   Future<AppResult<UserModel>> getCachedUserProfile(String userId) async {
     try {
-      final user = await localDataSource.getUser(userId);
+      final user = await localDataSource.getUser();
       return AppResult.success(user!);
     } catch (e) {
-      return AppResult.error(AppException.fromException(e));
+      return AppResult.failure(AppException.fromException(e));
     }
   }
 
@@ -80,7 +80,7 @@ class UserRepository {
       await localDataSource.saveUser(updatedUser);
       return AppResult.success(updatedUser);
     } catch (e) {
-      return AppResult.error(AppException.fromException(e));
+      return AppResult.failure(AppException.fromException(e));
     }
   }
 
@@ -98,7 +98,7 @@ class UserRepository {
       await localDataSource.saveUser(updatedUser);
       return AppResult.success(updatedUser);
     } catch (e) {
-      return AppResult.error(AppException.fromException(e));
+      return AppResult.failure(AppException.fromException(e));
     }
   }
 
@@ -109,7 +109,7 @@ class UserRepository {
       await localDataSource.deleteUser(userId);
       return AppResult.success(null);
     } catch (e) {
-      return AppResult.error(AppException.fromException(e));
+      return AppResult.failure(AppException.fromException(e));
     }
   }
 }
