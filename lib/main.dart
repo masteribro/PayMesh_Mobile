@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'presentation/screens/splash_screen.dart';
+import 'presentation/screens/login_screen.dart';
+import 'presentation/screens/register_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/send_money_screen.dart';
 import 'presentation/screens/transaction_history_screen.dart';
@@ -124,7 +127,13 @@ class PayMeshApp extends StatelessWidget {
           color: Colors.white,
         ),
       ),
-      home: const MainNavigationScreen(),
+      home: const SplashScreen(),
+      routes: {
+        '/splash': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const MainNavigationScreen(),
+      },
     );
   }
 }
