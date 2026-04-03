@@ -1,0 +1,49 @@
+PODS:
+  - connectivity_plus (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+  - flutter_ble_peripheral (2.0.1):
+    - Flutter
+    - FlutterMacOS
+  - flutter_blue_plus_darwin (0.0.2):
+    - Flutter
+    - FlutterMacOS
+  - flutter_secure_storage_darwin (10.0.0):
+    - Flutter
+    - FlutterMacOS
+  - nfc_manager (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
+  - Flutter (from `Flutter`)
+  - flutter_ble_peripheral (from `.symlinks/plugins/flutter_ble_peripheral/darwin`)
+  - flutter_blue_plus_darwin (from `.symlinks/plugins/flutter_blue_plus_darwin/darwin`)
+  - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
+  - nfc_manager (from `.symlinks/plugins/nfc_manager/ios`)
+
+EXTERNAL SOURCES:
+  connectivity_plus:
+    :path: ".symlinks/plugins/connectivity_plus/ios"
+  Flutter:
+    :path: Flutter
+  flutter_ble_peripheral:
+    :path: ".symlinks/plugins/flutter_ble_peripheral/darwin"
+  flutter_blue_plus_darwin:
+    :path: ".symlinks/plugins/flutter_blue_plus_darwin/darwin"
+  flutter_secure_storage_darwin:
+    :path: ".symlinks/plugins/flutter_secure_storage_darwin/darwin"
+  nfc_manager:
+    :path: ".symlinks/plugins/nfc_manager/ios"
+
+SPEC CHECKSUMS:
+  connectivity_plus: 2a701ffec2c0ae28a48cf7540e279787e77c447d
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_ble_peripheral: ad8683182faaefcb597124368fc3532aaac5585e
+  flutter_blue_plus_darwin: 904ed52825285a15f60e9d90312337a09f11a785
+  flutter_secure_storage_darwin: 557817588b80e60213cbecb573c45c76b788018d
+  nfc_manager: 9d49960b3c679848c16877766b7fa1f27f180d6b
+
+PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
+
+COCOAPODS: 1.16.2
