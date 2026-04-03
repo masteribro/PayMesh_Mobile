@@ -30,6 +30,8 @@ class Constants {
   
   // Bluetooth Constants
   static const String bluetoothServiceUuid = '550e8400-e29b-41d4-a716-446655440000';
+  // Alias used by bluetooth_service.dart
+  static const String bleServiceUuid = bluetoothServiceUuid;
   static const String transactionCharacteristicUuid = '550e8400-e29b-41d4-a716-446655440001';
   static const String balanceCharacteristicUuid = '550e8400-e29b-41d4-a716-446655440002';
   

@@ -18,41 +18,37 @@ abstract class AppException implements Exception {
 }
 
 class GenericException extends AppException {
-  GenericException(String message) : super(message);
+  GenericException(super.message);
 }
 
 class NetworkException extends AppException {
-  NetworkException([String message = 'Network error occurred'])
-      : super(message);
+  NetworkException([super.message = 'Network error occurred']);
 }
 
 class ServerException extends AppException {
   final int? statusCode;
-  ServerException(String message, {this.statusCode}) : super(message);
+  ServerException(super.message, {this.statusCode});
 }
 
 class AuthenticationException extends AppException {
-  AuthenticationException([String message = 'Authentication failed'])
-      : super(message);
+  AuthenticationException([super.message = 'Authentication failed']);
 }
 
 class ValidationException extends AppException {
   final Map<String, String>? errors;
-  ValidationException(String message, {this.errors}) : super(message);
+  ValidationException(super.message, {this.errors});
 }
 
 class OfflineException extends AppException {
-  OfflineException([String message = 'No internet connection'])
-      : super(message);
+  OfflineException([super.message = 'No internet connection']);
 }
 
 class LocalStorageException extends AppException {
-  LocalStorageException([String message = 'Local storage error'])
-      : super(message);
+  LocalStorageException([super.message = 'Local storage error']);
 }
 
 class BluetoothException extends AppException {
-  BluetoothException([String message = 'Bluetooth error']) : super(message);
+  BluetoothException([super.message = 'Bluetooth error']);
 }
 
 class InsufficientFundsException extends AppException {

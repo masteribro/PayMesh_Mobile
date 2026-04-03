@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'api_constants.dart';
 
 class ApiClient {
@@ -19,6 +20,16 @@ class ApiClient {
         responseType: ResponseType.json,
       ),
     );
+
+    // Pretty logger — shows every request and response in the console
+    _dio.interceptors.add(PrettyDioLogger(
+      requestHeader: true,
+      requestBody: true,
+      responseBody: true,
+      responseHeader: false,
+      error: true,
+      compact: false,
+    ));
 
     // Add interceptor for token management
     _dio.interceptors.add(

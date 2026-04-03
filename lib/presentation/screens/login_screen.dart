@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Don&apos;t have an account? ',
+                      "Don't have an account? ",
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     GestureDetector(

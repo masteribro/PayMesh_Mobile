@@ -45,5 +45,29 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>PayMesh uses Bluetooth to send and receive payments offline with nearby devices</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>PayMesh uses Bluetooth to make your device discoverable for offline payments</string>
+	<key>NFCReaderUsageDescription</key>
+	<string>PayMesh uses NFC to exchange payment information by tapping phones together</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>127.0.0.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 </dict>
 </plist>

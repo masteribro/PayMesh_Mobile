@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../data/dto/offline_transaction_request.dart';
 import '../../data/models/transaction_model.dart';
+import '../../data/services/auth_service.dart';
+import '../../data/services/api_client.dart';
+import '../../data/services/api_constants.dart';
+import '../../data/services/transaction_service.dart';
 import '../../domain/utils/format_util.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
@@ -10,82 +15,81 @@ class TransactionHistoryScreen extends StatefulWidget {
 }
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
-  final String userId = 'user123';
-  late List<TransactionModel> allTransactions;
+  final _authService = AuthService();
+  final _transactionService = TransactionService();
+  final _apiClient = ApiClient();
+
+  String _userId = '';
+  List<TransactionModel> allTransactions = [];
   String _filterStatus = 'ALL';
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _initializeMockData();
+    _loadData();
   }
 
-  void _initializeMockData() {
-    allTransactions = [
-      TransactionModel(
-        id: 'txn001',
-        senderId: 'user123',
-        receiverId: 'user456',
-        amount: 50.00,
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        signature: 'sig123',
-        status: 'PENDING_SYNC',
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      TransactionModel(
-        id: 'txn002',
-        senderId: 'user789',
-        receiverId: 'user123',
-        amount: 100.00,
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        signature: 'sig456',
-        status: 'COMPLETED',
-        syncedAt: DateTime.now().subtract(const Duration(days: 1)),
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      TransactionModel(
-        id: 'txn003',
-        senderId: 'user123',
-        receiverId: 'user999',
-        amount: 75.50,
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
-        signature: 'sig789',
-        status: 'COMPLETED',
-        syncedAt: DateTime.now().subtract(const Duration(days: 2)),
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      TransactionModel(
-        id: 'txn004',
-        senderId: 'user111',
-        receiverId: 'user123',
-        amount: 200.00,
-        timestamp: DateTime.now().subtract(const Duration(days: 3)),
-        signature: 'sig000',
-        status: 'COMPLETED',
-        syncedAt: DateTime.now().subtract(const Duration(days: 3)),
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-      TransactionModel(
-        id: 'txn005',
-        senderId: 'user123',
-        receiverId: 'user222',
-        amount: 30.00,
-        timestamp: DateTime.now().subtract(const Duration(days: 5)),
-        signature: 'sig111',
-        status: 'COMPLETED',
-        syncedAt: DateTime.now().subtract(const Duration(days: 5)),
-        createdAt: DateTime.now().subtract(const Duration(days: 5)),
-      ),
-    ];
+  TransactionModel _toTransactionModel(OfflineTransactionRequest r) {
+    return TransactionModel(
+      id: r.id,
+      senderId: r.senderId,
+      receiverId: r.receiverId,
+      amount: r.amount,
+      timestamp: DateTime.tryParse(r.timestamp) ?? DateTime.now(),
+      signature: r.signature,
+      status: 'PENDING_SYNC',
+      createdAt: DateTime.tryParse(r.timestamp) ?? DateTime.now(),
+    );
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    final userId = await _authService.getUserId() ?? '';
+
+    List<TransactionModel> transactions = [];
+
+    // Load completed transactions from backend
+    try {
+      final response = await _apiClient.get('${ApiConstants.baseUrl}/transactions/history/$userId');
+      final List<dynamic> list = response.data as List<dynamic>;
+      transactions = list.map((item) {
+        final m = item as Map<String, dynamic>;
+        return TransactionModel(
+          id: m['id'] as String,
+          senderId: m['senderId'] as String,
+          receiverId: m['receiverId'] as String,
+          amount: (m['amount'] as num).toDouble(),
+          timestamp: DateTime.parse(m['timestamp'] as String),
+          signature: '',
+          status: (m['status'] as String),
+          syncedAt: m['syncedAt'] != null ? DateTime.parse(m['syncedAt'] as String) : null,
+          conflictReason: m['conflictReason'] as String?,
+          createdAt: DateTime.parse(m['timestamp'] as String),
+        );
+      }).toList();
+    } catch (_) {
+      // Offline — fall back to local pending transactions
+      final pending = await _transactionService.getPendingTransactions();
+      transactions = pending.map(_toTransactionModel).toList();
+    }
+
+    if (mounted) {
+      setState(() {
+        _userId = userId;
+        allTransactions = transactions;
+        _isLoading = false;
+      });
+    }
   }
 
   List<TransactionModel> get filteredTransactions {
     if (_filterStatus == 'ALL') {
       return allTransactions;
     } else if (_filterStatus == 'SENT') {
-      return allTransactions.where((t) => t.senderId == userId).toList();
+      return allTransactions.where((t) => t.senderId == _userId).toList();
     } else if (_filterStatus == 'RECEIVED') {
-      return allTransactions.where((t) => t.receiverId == userId).toList();
+      return allTransactions.where((t) => t.receiverId == _userId).toList();
     } else if (_filterStatus == 'PENDING') {
       return allTransactions.where((t) => t.isPendingSync).toList();
     }
@@ -93,7 +97,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   }
 
   String _getTransactionTitle(TransactionModel transaction) {
-    final isSent = transaction.senderId == userId;
+    final isSent = transaction.senderId == _userId;
     if (isSent) {
       return 'Sent to ${FormatUtil.formatUserId(transaction.receiverId)}';
     } else {
@@ -108,7 +112,11 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         title: const Text('Transaction History'),
         elevation: 0,
       ),
-      body: Column(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              child: Column(
         children: [
           // Filter Chips
           SingleChildScrollView(
@@ -231,7 +239,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     itemCount: filteredTransactions.length,
                     itemBuilder: (context, index) {
                       final transaction = filteredTransactions[index];
-                      final isSent = transaction.senderId == userId;
+                      final isSent = transaction.senderId == _userId;
 
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -346,11 +354,12 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
           ),
         ],
       ),
+            ),
     );
   }
 
   void _showTransactionDetails(BuildContext context, TransactionModel transaction) {
-    final isSent = transaction.senderId == userId;
+    final isSent = transaction.senderId == _userId;
 
     showModalBottomSheet(
       context: context,

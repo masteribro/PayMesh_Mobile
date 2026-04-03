@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../dto/auth_response.dart';
 import '../dto/login_request.dart';
@@ -139,16 +140,26 @@ class AuthService {
     }
   }
 
+  /// Get the stored auth response (user profile cached from last login/register)
+  Future<AuthResponse?> getCachedAuthResponse() async {
+    try {
+      final data = await _secureStorage.read(key: _userDataKey);
+      if (data == null) return null;
+      return AuthResponse.fromJson(jsonDecode(data));
+    } catch (e) {
+      print('[v0] Get cached auth response error: $e');
+      return null;
+    }
+  }
+
   /// Save authentication data securely
   Future<void> _saveAuthData(AuthResponse authResponse) async {
     try {
+      await _secureStorage.write(key: _tokenKey, value: authResponse.token);
+      await _secureStorage.write(key: _userIdKey, value: authResponse.userId);
       await _secureStorage.write(
-        key: _tokenKey,
-        value: authResponse.token,
-      );
-      await _secureStorage.write(
-        key: _userIdKey,
-        value: authResponse.userId,
+        key: _userDataKey,
+        value: jsonEncode(authResponse.toJson()),
       );
     } catch (e) {
       print('[v0] Save auth data error: $e');
