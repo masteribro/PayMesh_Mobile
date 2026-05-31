@@ -71,13 +71,51 @@ class _HomeScreenState extends State<HomeScreen> {
         _isOnline = false;
       }
 
+      // Fetch completed transactions from backend (only when online)
+      List<TransactionModel> serverTransactions = [];
+      if (_isOnline) {
+        try {
+          final txResponse = await _apiClient.get(
+            '${ApiConstants.baseUrl}/transactions/history/$userId',
+          );
+          final List<dynamic> list = txResponse.data as List<dynamic>;
+          serverTransactions = list.map((item) {
+            final m = item as Map<String, dynamic>;
+            return TransactionModel(
+              id: m['id'] as String,
+              senderId: m['senderId'] as String,
+              receiverId: m['receiverId'] as String,
+              amount: (m['amount'] as num).toDouble(),
+              timestamp: DateTime.parse(m['timestamp'] as String),
+              signature: '',
+              status: m['status'] as String,
+              syncedAt: m['syncedAt'] != null
+                  ? DateTime.parse(m['syncedAt'] as String)
+                  : null,
+              createdAt: DateTime.parse(m['timestamp'] as String),
+            );
+          }).toList();
+        } catch (_) {
+          // Keep empty — fall through to local pending only
+        }
+      }
+
       // Load pending offline transactions from local storage
       final pending = await _transactionService.getPendingTransactions();
+      final pendingModels = pending.map(_toTransactionModel).toList();
+
+      // Merge: server transactions + any local pending not already in server list
+      final serverIds = serverTransactions.map((t) => t.id).toSet();
+      final uniquePending =
+          pendingModels.where((p) => !serverIds.contains(p.id)).toList();
+
+      final allRecent = [...serverTransactions, ...uniquePending]
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
       if (mounted) {
         setState(() {
-          _recentTransactions = pending.take(5).map(_toTransactionModel).toList();
+          _recentTransactions = allRecent.take(5).toList();
           _isLoading = false;
-          _isOnline = _isOnline;
         });
       }
     } catch (e) {
@@ -363,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Pending Transactions',
+                            'Recent Transactions',
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           TextButton(
@@ -384,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[300]),
                             const SizedBox(height: 12),
                             Text(
-                              'No pending transactions',
+                              'No transactions yet',
                               style: TextStyle(color: Colors.grey[500], fontSize: 14),
                             ),
                           ],

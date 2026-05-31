@@ -10,6 +10,7 @@ import '../../data/services/transaction_service.dart';
 import '../../domain/services/bluetooth_service.dart';
 import '../../domain/services/nfc_service.dart';
 import '../../domain/utils/format_util.dart';
+import 'qr_scanner_screen.dart';
 
 class SendMoneyScreen extends StatefulWidget {
   const SendMoneyScreen({super.key});
@@ -336,6 +337,21 @@ class _SendMoneyScreenState extends State<SendMoneyScreen>
     if (mounted) setState(() { _nfcActive = false; _nfcStatus = ''; });
   }
 
+  // ── QR CODE ──────────────────────────────────────────────────────────────
+
+  Future<void> _scanQrCode() async {
+    final result = await Navigator.push<Map<String, String?>>(
+      context,
+      MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _recipientController.text = result['userId'] ?? '';
+        _recipientName = result['username'];
+      });
+    }
+  }
+
   // ── helpers ──────────────────────────────────────────────────────────────
 
   void _clearForm() {
@@ -430,9 +446,14 @@ class _SendMoneyScreenState extends State<SendMoneyScreen>
             const SizedBox(height: 8),
             TextFormField(
               controller: _recipientController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Paste recipient user ID',
-                prefixIcon: Icon(Icons.person_outline),
+                prefixIcon: const Icon(Icons.person_outline),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.qr_code_scanner, color: Color(0xFF2563EB)),
+                  tooltip: 'Scan QR code',
+                  onPressed: _scanQrCode,
+                ),
               ),
               validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter recipient ID' : null,
             ),

@@ -51,6 +51,8 @@
 	<string>PayMesh uses Bluetooth to make your device discoverable for offline payments</string>
 	<key>NFCReaderUsageDescription</key>
 	<string>PayMesh uses NFC to exchange payment information by tapping phones together</string>
+	<key>NSCameraUsageDescription</key>
+	<string>PayMesh uses the camera to scan QR codes for recipient identification</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
