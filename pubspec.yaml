@@ -38,6 +38,7 @@ dependencies:
   dio: ^5.9.2
   pretty_dio_logger: ^1.4.0
   connectivity_plus: ^6.0.3
+  crypto: ^3.0.6
   flutter_blue_plus: ^2.2.1
   flutter_ble_peripheral: ^2.1.0
   nfc_manager: ^4.1.1

@@ -115,18 +115,13 @@ class TransactionRepository {
     }
   }
 
-  /// Remove synced transactions from local storage
   Future<void> removeSyncedTransactions(List<String> transactionIds) async {
     try {
-      final transactions =
-          await localDataSource.getOfflineTransactions();
+      final transactions = await localDataSource.getOfflineTransactions();
       final remaining = transactions
           .where((tx) => !transactionIds.contains(tx.id))
           .toList();
       await localDataSource.saveOfflineTransactions(remaining);
-    } catch (e) {
-      // Log error but don't throw
-      print('Error removing synced transactions: $e');
-    }
+    } catch (_) {}
   }
 }
