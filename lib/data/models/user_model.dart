@@ -22,9 +22,9 @@ class UserModel {
   
   @JsonKey(name: 'createdAt')
   final DateTime createdAt;
-  
-  @JsonKey(name: 'updatedAt')
-  final DateTime? updatedAt;
+
+  @JsonKey(name: 'lastOnlineAt')
+  final DateTime? lastOnlineAt;
 
   UserModel({
     required this.userId,
@@ -35,7 +35,7 @@ class UserModel {
     this.pendingOfflineTransactionCount = 0,
     this.isActive = true,
     required this.createdAt,
-    this.updatedAt,
+    this.lastOnlineAt,
   });
 
   /// Get available balance (excluding pending transactions)
@@ -60,7 +60,7 @@ class UserModel {
     int? pendingOfflineTransactionCount,
     bool? isActive,
     DateTime? createdAt,
-    DateTime? updatedAt,
+    DateTime? lastOnlineAt,
   }) {
     return UserModel(
       userId: userId ?? this.userId,
@@ -72,12 +72,13 @@ class UserModel {
           pendingOfflineTransactionCount ?? this.pendingOfflineTransactionCount,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      lastOnlineAt: lastOnlineAt ?? this.lastOnlineAt,
     );
   }
 
   @override
   String toString() => 'UserModel(userId: $userId, email: $email, '
       'username: $username, balance: $balance, '
-      'pendingOfflineAmount: $pendingOfflineAmount)';
+      'pendingOfflineAmount: $pendingOfflineAmount, '
+      'lastOnlineAt: $lastOnlineAt)';
 }

@@ -17,9 +17,9 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       (json['pendingOfflineTransactionCount'] as num?)?.toInt() ?? 0,
   isActive: json['isActive'] as bool? ?? true,
   createdAt: DateTime.parse(json['createdAt'] as String),
-  updatedAt: json['updatedAt'] == null
+  lastOnlineAt: json['lastOnlineAt'] == null
       ? null
-      : DateTime.parse(json['updatedAt'] as String),
+      : DateTime.parse(json['lastOnlineAt'] as String),
 );
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
@@ -31,5 +31,5 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'pendingOfflineTransactionCount': instance.pendingOfflineTransactionCount,
   'isActive': instance.isActive,
   'createdAt': instance.createdAt.toIso8601String(),
-  'updatedAt': instance.updatedAt?.toIso8601String(),
+  'lastOnlineAt': instance.lastOnlineAt?.toIso8601String(),
 };

@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Fetch fresh user profile from backend
       try {
-        final response = await _apiClient.get('${ApiConstants.baseUrl}/users/$userId');
+        final response = await _apiClient.get('${ApiConstants.usersBase}/$userId');
         final data = response.data as Map<String, dynamic>;
 
         final updatedUser = AuthResponse(
@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_isOnline) {
         try {
           final txResponse = await _apiClient.get(
-            '${ApiConstants.baseUrl}/transactions/history/$userId',
+            '${ApiConstants.transactionHistoryBase}/$userId',
           );
           final List<dynamic> list = txResponse.data as List<dynamic>;
           serverTransactions = list.map((item) {
@@ -592,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               final userId = await _authService.getUserId();
                               final amount = double.parse(amountController.text);
                               await _apiClient.post(
-                                '${ApiConstants.baseUrl}/users/$userId/topup',
+                                '${ApiConstants.usersBase}/$userId/topup',
                                 data: {'amount': amount},
                               );
                               if (mounted) {

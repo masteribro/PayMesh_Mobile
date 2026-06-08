@@ -4,6 +4,7 @@ import '../dto/offline_transaction_request.dart';
 import '../dto/offline_allowance.dart';
 import '../dto/sync_response.dart';
 import '../dto/sync_transactions_request.dart';
+import '../dto/transaction_response.dart';
 import 'api_client.dart';
 import 'api_constants.dart';
 
@@ -88,6 +89,22 @@ class TransactionService {
 
     await _savePendingTransactions(remainingTransactions);
     return syncResponse;
+  }
+
+  Future<TransactionResponse> sendMoneyOnline({
+    required String senderId,
+    required String receiverId,
+    required double amount,
+    String? description,
+  }) async {
+    final body = <String, dynamic>{
+      'senderId': senderId,
+      'receiverId': receiverId,
+      'amount': amount,
+      if (description != null) 'description': description,
+    };
+    final response = await _apiClient.post(ApiConstants.sendMoney, data: body);
+    return TransactionResponse.fromJson(response.data);
   }
 
   Future<OfflineAllowance> getOfflineAllowance({required String userId}) async {
