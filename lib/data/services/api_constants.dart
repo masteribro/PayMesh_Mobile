@@ -1,5 +1,9 @@
 class ApiConstants {
-  static const String baseUrl = 'http://192.168.210.185:8080/api/v1';
+  static const String _host = String.fromEnvironment(
+    'API_HOST',
+    defaultValue: '192.168.1.8',
+  );
+  static const String baseUrl = 'http://$_host:8080/api/v1';
 
   static const String register = '$baseUrl/auth/register';
   static const String login = '$baseUrl/auth/login';

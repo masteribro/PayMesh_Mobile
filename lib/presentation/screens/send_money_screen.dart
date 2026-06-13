@@ -4,6 +4,7 @@ import '../../data/services/auth_service.dart';
 import '../../data/services/transaction_service.dart';
 import '../../domain/services/bluetooth_service.dart';
 import '../../domain/utils/format_util.dart';
+import 'qr_scanner_screen.dart';
 
 class SendMoneyScreen extends StatefulWidget {
   const SendMoneyScreen({super.key});
@@ -37,7 +38,29 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
     super.dispose();
   }
 
-  // ── BLE ──────────────────────────────────────────────────────────────────
+  // ── QR Code ───────────────────────────────────────────────────────────────
+
+  Future<void> _scanQr() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _recipientId = result['userId'] as String?;
+      _recipientName = result['username'] as String?;
+    });
+    if (_recipientId != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Recipient set to ${_recipientName ?? _recipientId}'),
+          backgroundColor: const Color(0xFF10B981),
+        ),
+      );
+    }
+  }
+
+  // ── BLE ───────────────────────────────────────────────────────────────────
 
   Future<void> _startAdvertise() async {
     final userId = await _authService.getUserId();
@@ -94,7 +117,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
 
   Future<void> _send() async {
     if (_recipientId == null) {
-      _showError('Select a recipient first — scan for nearby users below.');
+      _showError('Scan the recipient\'s QR code first.');
       return;
     }
     final amountText = _amountController.text.trim();
@@ -109,19 +132,15 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
       final senderId = await _authService.getUserId();
       if (senderId == null) throw Exception('Not logged in');
 
-      final txId = 'offline_${DateTime.now().millisecondsSinceEpoch}';
-      await _txService.createOfflineTransaction(
-        id: txId,
+      final result = await _txService.sendMoneyOnline(
         senderId: senderId,
         receiverId: _recipientId!,
         amount: amount,
-        timestamp: DateTime.now().toIso8601String(),
-        signature: 'sig_${txId.hashCode.abs()}',
       );
 
       if (mounted) {
         setState(() => _isLoading = false);
-        _showSuccessSheet(txId, amount, _recipientName ?? _recipientId!);
+        _showSuccessSheet(result.id, amount, _recipientName ?? _recipientId!);
         _amountController.clear();
         setState(() {
           _recipientId = null;
@@ -169,16 +188,16 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
               width: 64,
               height: 64,
               decoration: const BoxDecoration(
-                  color: Color(0xFFFEF3C7), shape: BoxShape.circle),
-              child: const Icon(Icons.schedule_send,
-                  color: Color(0xFFD97706), size: 36),
+                  color: Color(0xFFD1FAE5), shape: BoxShape.circle),
+              child: const Icon(Icons.check_circle,
+                  color: Color(0xFF10B981), size: 36),
             ),
             const SizedBox(height: 16),
-            const Text('Saved!',
+            const Text('Sent!',
                 style:
                     TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            const Text("Will sync when you're back online",
+            const Text("Money transferred successfully",
                 style:
                     TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
             const SizedBox(height: 8),
@@ -214,19 +233,41 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Send via Bluetooth')),
+      appBar: AppBar(title: const Text('Send Money')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Be Discoverable ──────────────────────────────────────────
+            // ── Scan QR to find recipient ─────────────────────────────────
             _SectionCard(
-              icon: Icons.broadcast_on_personal,
-              title: 'Be Discoverable (Receiver)',
-              subtitle: 'Let nearby senders find your device',
+              icon: Icons.qr_code_scanner,
+              title: 'Find Recipient via QR',
+              subtitle: 'Scan the recipient\'s PayMesh QR code',
               color: const Color(0xFFF0F9FF),
               borderColor: const Color(0xFFBFDBFE),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _scanQr,
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Scan QR Code'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── Be Discoverable (BLE) ─────────────────────────────────────
+            _SectionCard(
+              icon: Icons.broadcast_on_personal,
+              title: 'Be Discoverable via Bluetooth',
+              subtitle: 'Let nearby senders find your device',
+              color: const Color(0xFFF0FDF4),
+              borderColor: const Color(0xFFBBF7D0),
               child: Row(
                 children: [
                   Expanded(
@@ -236,7 +277,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                           : 'Not broadcasting',
                       style: TextStyle(
                         color: _isAdvertising
-                            ? const Color(0xFF2563EB)
+                            ? const Color(0xFF16A34A)
                             : const Color(0xFF6B7280),
                         fontSize: 13,
                       ),
@@ -244,9 +285,8 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                   ),
                   Switch(
                     value: _isAdvertising,
-                    onChanged: (v) =>
-                        v ? _startAdvertise() : _stopAdvertise(),
-                    activeColor: const Color(0xFF2563EB),
+                    onChanged: (v) => v ? _startAdvertise() : _stopAdvertise(),
+                    activeThumbColor: const Color(0xFF16A34A),
                   ),
                 ],
               ),
@@ -254,10 +294,10 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
 
             const SizedBox(height: 16),
 
-            // ── Find Nearby Users ─────────────────────────────────────────
+            // ── Scan for Nearby (BLE) ─────────────────────────────────────
             _SectionCard(
               icon: Icons.person_search,
-              title: 'Find Nearby Users (Sender)',
+              title: 'Find Nearby via Bluetooth',
               subtitle: 'Scan for PayMesh devices in range',
               color: const Color(0xFFF9FAFB),
               borderColor: const Color(0xFFE5E7EB),
@@ -274,27 +314,23 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                               height: 16,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.search),
-                      label: Text(
-                          _isScanning ? 'Scanning…' : 'Scan for Nearby'),
+                          : const Icon(Icons.bluetooth_searching),
+                      label: Text(_isScanning ? 'Scanning…' : 'Scan for Nearby'),
                       style: ElevatedButton.styleFrom(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12)),
                     ),
                   ),
                   if (_nearbyDevices.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     const Text('Nearby PayMesh Users:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 13)),
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                     const SizedBox(height: 8),
                     ...List.generate(_nearbyDevices.length, (i) {
                       final d = _nearbyDevices[i];
                       final isSelected = _recipientId == d.userId;
-                      final initials = d.displayName.length > 3
-                          ? d.displayName.substring(3,
-                              d.displayName.length.clamp(3, 5))
-                          : d.displayName;
+                      final initials = d.displayName.length >= 2
+                          ? d.displayName.substring(0, 2).toUpperCase()
+                          : d.displayName.toUpperCase();
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: CircleAvatar(
@@ -302,12 +338,10 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                               const Color(0xFF2563EB).withValues(alpha: 0.1),
                           child: Text(initials,
                               style: const TextStyle(
-                                  color: Color(0xFF2563EB),
-                                  fontSize: 12)),
+                                  color: Color(0xFF2563EB), fontSize: 12)),
                         ),
                         title: Text(d.displayName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600)),
+                            style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text('Signal: ${d.rssi} dBm'),
                         trailing: isSelected
                             ? const Icon(Icons.check_circle,
@@ -323,8 +357,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                       padding: EdgeInsets.only(top: 12),
                       child: Text(
                         'No PayMesh devices found. Make sure the recipient has "Be Discoverable" turned on.',
-                        style: TextStyle(
-                            color: Color(0xFF9CA3AF), fontSize: 12),
+                        style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12),
                       ),
                     ),
                 ],
@@ -425,7 +458,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                   SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      "Saved locally — syncs with server when you're back online",
+                      "Transferred instantly — balance updated on both accounts",
                       style: TextStyle(
                           fontSize: 11, color: Color(0xFF9CA3AF)),
                     ),

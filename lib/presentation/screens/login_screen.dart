@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'dart:convert';
 import '../../data/services/auth_service.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
@@ -24,6 +26,89 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  void _showResponseDialog({
+    required bool success,
+    required String title,
+    required Map<String, dynamic> body,
+  }) {
+    final color = success ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final icon = success ? Icons.check_circle_outline : Icons.error_outline;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 22),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: SingleChildScrollView(
+                  child: Text(
+                    const JsonEncoder.withIndent('  ').convert(body),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+              if (success) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: color),
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      Navigator.of(context).pushReplacementNamed('/home');
+                    },
+                    child: const Text(
+                      'Continue to Home',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       setState(() {
@@ -44,19 +129,28 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome, ${response.username}!'),
-            backgroundColor: Colors.green,
-          ),
+        _showResponseDialog(
+          success: true,
+          title: 'Login Successful',
+          body: response.toJson(),
         );
-
-        Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Login failed: ${e.toString()}';
-      });
+      if (!mounted) return;
+      if (e is DioException) {
+        final data = e.response?.data;
+        final body = <String, dynamic>{
+          'status': e.response?.statusCode ?? 'N/A',
+          'message': e.message ?? 'Unknown error',
+          if (data is Map) ...Map<String, dynamic>.from(data),
+          if (data is String) 'raw': data,
+        };
+        _showResponseDialog(success: false, title: 'Login Failed', body: body);
+      } else {
+        setState(() {
+          _errorMessage = e.toString();
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {

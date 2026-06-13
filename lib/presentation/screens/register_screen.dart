@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
 import 'dart:convert';
 import '../../data/services/auth_service.dart';
 import 'login_screen.dart';
@@ -32,6 +33,90 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _generatePublicKey() {
     // Generate a simple public key from UUID
     return sha256.convert(utf8.encode(DateTime.now().toString())).toString();
+  }
+
+  void _showResponseDialog({
+    required bool success,
+    required String title,
+    required Map<String, dynamic> body,
+  }) {
+    final color = success ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final icon = success ? Icons.check_circle_outline : Icons.error_outline;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 22),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: SingleChildScrollView(
+                  child: Text(
+                    const JsonEncoder.withIndent('  ').convert(body),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+              if (success) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: color),
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      Navigator.of(context)
+                          .pushNamedAndRemoveUntil('/home', (route) => false);
+                    },
+                    child: const Text(
+                      'Continue to Home',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _handleRegister() async {
@@ -69,23 +154,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
         username: _usernameController.text.trim(),
         password: _passwordController.text,
         publicKey: _generatePublicKey(),
-        initialBalance: 1000.0, // Default balance for new users
+        initialBalance: 1000.0,
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome, ${response.username}! Account created.'),
-            backgroundColor: Colors.green,
-          ),
+        _showResponseDialog(
+          success: true,
+          title: 'Account Created',
+          body: response.toJson(),
         );
-
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Registration failed: ${e.toString()}';
-      });
+      if (!mounted) return;
+      if (e is DioException) {
+        final data = e.response?.data;
+        final body = <String, dynamic>{
+          'status': e.response?.statusCode ?? 'N/A',
+          'message': e.message ?? 'Unknown error',
+          if (data is Map) ...Map<String, dynamic>.from(data),
+          if (data is String) 'raw': data,
+        };
+        _showResponseDialog(success: false, title: 'Request Failed', body: body);
+      } else {
+        setState(() {
+          _errorMessage = e.toString();
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {

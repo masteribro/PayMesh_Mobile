@@ -1,6 +1,6 @@
 class Constants {
   // API Configuration
-  static const String baseUrl = 'http://192.168.210.185:8080';
+  static const String baseUrl = 'http://192.168.132.185:8080';
   static const String apiV1 = '$baseUrl/api/v1';
   
   // API Endpoints

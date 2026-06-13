@@ -16,6 +16,7 @@ class PayMeshApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'PayMesh',
       theme: ThemeData(
         useMaterial3: true,
