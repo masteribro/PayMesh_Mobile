@@ -9,6 +9,7 @@ import '../../data/services/transaction_service.dart';
 import '../../domain/services/bluetooth_service.dart';
 import '../../domain/utils/format_util.dart';
 import '../widgets/section_card.dart';
+import 'payment_qr_screen.dart';
 import 'qr_scanner_screen.dart';
 
 class SendMoneyScreen extends StatefulWidget {
@@ -170,7 +171,8 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
         );
         if (mounted) {
           setState(() => _isLoading = false);
-          _showSuccessSheet(result.id, amount, _recipientName ?? _recipientId!, isOffline: false);
+          _showSuccessSheet(result.id, amount, _recipientName ?? _recipientId!,
+              isOffline: false);
           _amountController.clear();
           setState(() {
             _recipientId = null;
@@ -179,6 +181,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
         }
       } on DioException catch (e) {
         if (_isNetworkError(e)) {
+          // Build the offline transaction
           final id = _generateUuid();
           final timestamp = DateTime.now().toIso8601String();
           final signature = _generateSignature(
@@ -196,19 +199,37 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
             timestamp: timestamp,
             signature: signature,
           );
+
+          // Fetch sender name for the payment QR
+          final cached = await _authService.getCachedAuthResponse();
+          final senderName = cached?.username ?? senderId;
+          final recipientName = _recipientName ?? _recipientId!;
+          final receiverId = _recipientId!;
+
           if (mounted) {
-            setState(() => _isLoading = false);
-            _showSuccessSheet(id, amount, _recipientName ?? _recipientId!, isOffline: true);
-            _amountController.clear();
             setState(() {
+              _isLoading = false;
               _recipientId = null;
               _recipientName = null;
             });
+            _amountController.clear();
+            _showOfflineSuccessSheet(
+              id: id,
+              senderId: senderId,
+              senderName: senderName,
+              receiverId: receiverId,
+              recipientName: recipientName,
+              amount: amount,
+              timestamp: timestamp,
+              signature: signature,
+            );
           }
         } else {
           if (mounted) {
             setState(() => _isLoading = false);
-            _showError(e.response?.data?['message']?.toString() ?? e.message ?? e.toString());
+            _showError(e.response?.data?['message']?.toString() ??
+                e.message ??
+                e.toString());
           }
         }
       }
@@ -218,6 +239,121 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
         _showError(e.toString());
       }
     }
+  }
+
+  void _showOfflineSuccessSheet({
+    required String id,
+    required String senderId,
+    required String senderName,
+    required String receiverId,
+    required String recipientName,
+    required double amount,
+    required String timestamp,
+    required String signature,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                  color: Color(0xFFFEF3C7), shape: BoxShape.circle),
+              child: const Icon(Icons.schedule,
+                  color: Color(0xFFF59E0B), size: 36),
+            ),
+            const SizedBox(height: 16),
+            const Text('Queued!',
+                style:
+                    TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            const Text(
+              'Saved locally — will sync when online',
+              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '₦${FormatUtil.formatCurrencyWithComma(amount)}',
+              style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFD97706)),
+            ),
+            const SizedBox(height: 8),
+            Text('To: $recipientName',
+                style: const TextStyle(color: Color(0xFF6B7280))),
+            const SizedBox(height: 4),
+            Text('TX: ${FormatUtil.formatTransactionId(id)}',
+                style: const TextStyle(
+                    fontSize: 12, color: Color(0xFF9CA3AF))),
+            const SizedBox(height: 16),
+            // Payment QR CTA
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBFDBFE)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.qr_code_2,
+                      color: Color(0xFF2563EB), size: 20),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Show a QR so the recipient can receive the funds now — even offline.',
+                      style: TextStyle(
+                          fontSize: 12, color: Color(0xFF1D4ED8)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context); // close sheet
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PaymentQrScreen(
+                        id: id,
+                        senderId: senderId,
+                        senderName: senderName,
+                        receiverId: receiverId,
+                        recipientName: recipientName,
+                        amount: amount,
+                        timestamp: timestamp,
+                        signature: signature,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.qr_code_2),
+                label: const Text('Show Payment QR'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Done (sync later)'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showError(String message) {

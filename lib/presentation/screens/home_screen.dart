@@ -6,6 +6,7 @@ import '../controllers/home_controller.dart';
 import '../widgets/home/balance_card.dart';
 import '../widgets/home/pending_sync_banner.dart';
 import '../widgets/home/transaction_list_tile.dart';
+import 'scan_incoming_payment_screen.dart';
 
 enum _MenuOption { topUp, logout }
 
@@ -249,6 +250,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _scanIncomingPayment() async {
+    final received = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+          builder: (_) => const ScanIncomingPaymentScreen()),
+    );
+    // Refresh home data if a payment was received
+    if (received == true && mounted) {
+      _controller.loadData();
+    }
+  }
+
   Future<void> _onSync() async {
     try {
       final synced = await _controller.syncTransactions();
@@ -367,26 +380,43 @@ class _HomeScreenState extends State<HomeScreen> {
                         Padding(
                           padding:
                               const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
+                          child: Column(
                             children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: _showMyQrSheet,
-                                  icon: const Icon(Icons.qr_code),
-                                  label: const Text('My QR'),
-                                  style: ElevatedButton.styleFrom(
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: _showMyQrSheet,
+                                      icon: const Icon(Icons.qr_code),
+                                      label: const Text('My QR'),
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 12),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed:
+                                          controller.isOnline ? _onSync : null,
+                                      icon: const Icon(Icons.sync),
+                                      label: const Text('Sync'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: _scanIncomingPayment,
+                                  icon: const Icon(Icons.qr_code_scanner),
+                                  label: const Text('Scan Payment QR'),
+                                  style: OutlinedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed:
-                                      controller.isOnline ? _onSync : null,
-                                  icon: const Icon(Icons.sync),
-                                  label: const Text('Sync'),
                                 ),
                               ),
                             ],
@@ -401,9 +431,51 @@ class _HomeScreenState extends State<HomeScreen> {
                           PendingSyncBanner(
                             count: controller
                                 .user!.pendingOfflineTransactionCount,
-                            amount:
-                                controller.user!.pendingOfflineAmount,
+                            amount: controller.user!.pendingOfflineAmount,
                           ),
+
+                        if (controller.incomingPendingAmount > 0) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD1FAE5),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: const Color(0xFF6EE7B7)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.arrow_downward,
+                                    color: Color(0xFF10B981)),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Incoming (Pending)',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF065F46),
+                                        ),
+                                      ),
+                                      Text(
+                                        '₦${FormatUtil.formatCurrency(controller.incomingPendingAmount)} — sync to confirm',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF047857),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
 
                         const SizedBox(height: 24),
 
