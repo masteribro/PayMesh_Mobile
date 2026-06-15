@@ -262,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '\$${FormatUtil.formatCurrencyWithComma(_user?.balance ?? 0)}',
+                            '₦${FormatUtil.formatCurrencyWithComma(_user?.balance ?? 0)}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 36,
@@ -282,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '\$${FormatUtil.formatCurrency((_user?.balance ?? 0) - (_user?.pendingOfflineAmount ?? 0))}',
+                                    '₦${FormatUtil.formatCurrency((_user?.balance ?? 0) - (_user?.pendingOfflineAmount ?? 0))}',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -306,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      '\$${FormatUtil.formatCurrency(_user?.pendingOfflineAmount ?? 0)}',
+                                      '₦${FormatUtil.formatCurrency(_user?.pendingOfflineAmount ?? 0)}',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 14,
@@ -377,7 +377,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '${_user!.pendingOfflineTransactionCount} transactions waiting to sync (\$${FormatUtil.formatCurrency(_user!.pendingOfflineAmount)})',
+                                    '${_user!.pendingOfflineTransactionCount} transactions waiting to sync (₦${FormatUtil.formatCurrency(_user!.pendingOfflineAmount)})',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFFB45309),
@@ -470,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      '${isSent ? '-' : '+'}\$${FormatUtil.formatCurrency(transaction.amount)}',
+                                      '${isSent ? '-' : '+'}₦${FormatUtil.formatCurrency(transaction.amount)}',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: isSent ? const Color(0xFFEF4444) : const Color(0xFF10B981),
@@ -593,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text('Current balance: \$${FormatUtil.formatCurrencyWithComma(_user?.balance ?? 0)}',
+                Text('Current balance: ₦${FormatUtil.formatCurrencyWithComma(_user?.balance ?? 0)}',
                     style: const TextStyle(color: Color(0xFF6B7280))),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -602,7 +602,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   autofocus: true,
                   decoration: const InputDecoration(
                     labelText: 'Amount',
-                    prefixText: '\$ ',
+                    prefixText: '₦ ',
                     hintText: '0.00',
                   ),
                   validator: (v) {
@@ -623,7 +623,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           ),
-                          child: Text('\$${preset.toStringAsFixed(0)}'),
+                          child: Text('₦${preset.toStringAsFixed(0)}'),
                         ),
                       ),
                   ],
@@ -648,7 +648,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Navigator.pop(ctx);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('\$${FormatUtil.formatCurrencyWithComma(amount)} added to your balance'),
+                                    content: Text('₦${FormatUtil.formatCurrencyWithComma(amount)} added to your balance'),
                                     backgroundColor: const Color(0xFF10B981),
                                   ),
                                 );

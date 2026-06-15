@@ -1,7 +1,7 @@
 class ApiConstants {
   static const String _host = String.fromEnvironment(
     'API_HOST',
-    defaultValue: '192.168.1.8',
+    defaultValue: '192.168.132.185',
   );
   static const String baseUrl = 'http://$_host:8080/api/v1';
 

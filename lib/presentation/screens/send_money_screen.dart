@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/transaction_service.dart';
@@ -36,6 +40,39 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
     _bleService.stopScan();
     _bleService.stopAdvertising();
     super.dispose();
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  bool _isNetworkError(Object e) {
+    if (e is DioException) {
+      return e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.connectionError;
+    }
+    return false;
+  }
+
+  String _generateUuid() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20, 32)}';
+  }
+
+  String _generateSignature({
+    required String id,
+    required String senderId,
+    required String receiverId,
+    required double amount,
+    required String timestamp,
+  }) {
+    final data = '$id:$senderId:$receiverId:$amount:$timestamp';
+    return sha256.convert(utf8.encode(data)).toString();
   }
 
   // ── QR Code ───────────────────────────────────────────────────────────────
@@ -132,20 +169,58 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
       final senderId = await _authService.getUserId();
       if (senderId == null) throw Exception('Not logged in');
 
-      final result = await _txService.sendMoneyOnline(
-        senderId: senderId,
-        receiverId: _recipientId!,
-        amount: amount,
-      );
-
-      if (mounted) {
-        setState(() => _isLoading = false);
-        _showSuccessSheet(result.id, amount, _recipientName ?? _recipientId!);
-        _amountController.clear();
-        setState(() {
-          _recipientId = null;
-          _recipientName = null;
-        });
+      try {
+        // ── Try online first ───────────────────────────────────────────────
+        final result = await _txService.sendMoneyOnline(
+          senderId: senderId,
+          receiverId: _recipientId!,
+          amount: amount,
+        );
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showSuccessSheet(result.id, amount, _recipientName ?? _recipientId!, isOffline: false);
+          _amountController.clear();
+          setState(() {
+            _recipientId = null;
+            _recipientName = null;
+          });
+        }
+      } on DioException catch (e) {
+        if (_isNetworkError(e)) {
+          // ── Server unreachable — fall back to offline ──────────────────
+          final id = _generateUuid();
+          final timestamp = DateTime.now().toIso8601String();
+          final signature = _generateSignature(
+            id: id,
+            senderId: senderId,
+            receiverId: _recipientId!,
+            amount: amount,
+            timestamp: timestamp,
+          );
+          await _txService.createOfflineTransaction(
+            id: id,
+            senderId: senderId,
+            receiverId: _recipientId!,
+            amount: amount,
+            timestamp: timestamp,
+            signature: signature,
+          );
+          if (mounted) {
+            setState(() => _isLoading = false);
+            _showSuccessSheet(id, amount, _recipientName ?? _recipientId!, isOffline: true);
+            _amountController.clear();
+            setState(() {
+              _recipientId = null;
+              _recipientName = null;
+            });
+          }
+        } else {
+          // ── Server reachable but returned an error (e.g. 400, 403) ─────
+          if (mounted) {
+            setState(() => _isLoading = false);
+            _showError(e.response?.data?['message']?.toString() ?? e.message ?? e.toString());
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -174,7 +249,8 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
     );
   }
 
-  void _showSuccessSheet(String txId, double amount, String recipientName) {
+  void _showSuccessSheet(String txId, double amount, String recipientName,
+      {bool isOffline = false}) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -187,22 +263,33 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
             Container(
               width: 64,
               height: 64,
-              decoration: const BoxDecoration(
-                  color: Color(0xFFD1FAE5), shape: BoxShape.circle),
-              child: const Icon(Icons.check_circle,
-                  color: Color(0xFF10B981), size: 36),
+              decoration: BoxDecoration(
+                  color: isOffline
+                      ? const Color(0xFFFEF3C7)
+                      : const Color(0xFFD1FAE5),
+                  shape: BoxShape.circle),
+              child: Icon(
+                isOffline ? Icons.schedule : Icons.check_circle,
+                color: isOffline
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF10B981),
+                size: 36,
+              ),
             ),
             const SizedBox(height: 16),
-            const Text('Sent!',
-                style:
-                    TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(isOffline ? 'Queued!' : 'Sent!',
+                style: const TextStyle(
+                    fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            const Text("Money transferred successfully",
-                style:
-                    TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+            Text(
+              isOffline
+                  ? 'Saved locally — will sync when online'
+                  : 'Money transferred successfully',
+              style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+            ),
             const SizedBox(height: 8),
             Text(
-              '\$${FormatUtil.formatCurrencyWithComma(amount)}',
+              '₦${FormatUtil.formatCurrencyWithComma(amount)}',
               style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -215,6 +302,22 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
             Text('TX: ${FormatUtil.formatTransactionId(txId)}',
                 style: const TextStyle(
                     fontSize: 12, color: Color(0xFF9CA3AF))),
+            if (isOffline) ...[
+              const SizedBox(height: 8),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.info_outline,
+                      size: 14, color: Color(0xFFF59E0B)),
+                  SizedBox(width: 4),
+                  Text(
+                    'Go to Home and tap Sync when back online',
+                    style:
+                        TextStyle(fontSize: 11, color: Color(0xFFF59E0B)),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -421,7 +524,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                 onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(
                   hintText: '0.00',
-                  prefixText: '\$ ',
+                  prefixText: '₦ ',
                   prefixStyle: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -458,7 +561,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                   SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      "Transferred instantly — balance updated on both accounts",
+                      "Online: transferred instantly. Offline: saved locally and synced when network returns.",
                       style: TextStyle(
                           fontSize: 11, color: Color(0xFF9CA3AF)),
                     ),

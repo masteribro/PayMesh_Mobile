@@ -328,7 +328,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                        '${isSent ? '-' : '+'}\$${FormatUtil.formatCurrency(transaction.amount)}',
+                                        '${isSent ? '-' : '+'}₦${FormatUtil.formatCurrency(transaction.amount)}',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 14,
@@ -394,7 +394,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               ),
               child: Center(
                 child: Text(
-                  '${isSent ? '-' : '+'}\$${FormatUtil.formatCurrency(transaction.amount)}',
+                  '${isSent ? '-' : '+'}₦${FormatUtil.formatCurrency(transaction.amount)}',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -409,7 +409,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
               isSent ? 'Recipient' : 'Sender',
               FormatUtil.formatUserId(isSent ? transaction.receiverId : transaction.senderId),
             ),
-            _buildDetailRow('Amount', '\$${FormatUtil.formatCurrency(transaction.amount)}'),
+            _buildDetailRow('Amount', '₦${FormatUtil.formatCurrency(transaction.amount)}'),
             _buildDetailRow('Date', FormatUtil.formatDateTime(transaction.timestamp)),
             _buildDetailRow('Status', transaction.status.replaceAll('_', ' ')),
             if (transaction.syncedAt != null)
