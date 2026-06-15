@@ -8,6 +8,7 @@ import '../../data/services/auth_service.dart';
 import '../../data/services/transaction_service.dart';
 import '../../domain/services/bluetooth_service.dart';
 import '../../domain/utils/format_util.dart';
+import '../widgets/section_card.dart';
 import 'qr_scanner_screen.dart';
 
 class SendMoneyScreen extends StatefulWidget {
@@ -42,8 +43,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
     super.dispose();
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
   bool _isNetworkError(Object e) {
     if (e is DioException) {
       return e.type == DioExceptionType.connectionTimeout ||
@@ -75,8 +74,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
     return sha256.convert(utf8.encode(data)).toString();
   }
 
-  // ── QR Code ───────────────────────────────────────────────────────────────
-
   Future<void> _scanQr() async {
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
@@ -96,8 +93,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
       );
     }
   }
-
-  // ── BLE ───────────────────────────────────────────────────────────────────
 
   Future<void> _startAdvertise() async {
     final userId = await _authService.getUserId();
@@ -150,8 +145,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
     );
   }
 
-  // ── Send ─────────────────────────────────────────────────────────────────
-
   Future<void> _send() async {
     if (_recipientId == null) {
       _showError('Scan the recipient\'s QR code first.');
@@ -170,7 +163,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
       if (senderId == null) throw Exception('Not logged in');
 
       try {
-        // ── Try online first ───────────────────────────────────────────────
         final result = await _txService.sendMoneyOnline(
           senderId: senderId,
           receiverId: _recipientId!,
@@ -187,7 +179,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
         }
       } on DioException catch (e) {
         if (_isNetworkError(e)) {
-          // ── Server unreachable — fall back to offline ──────────────────
           final id = _generateUuid();
           final timestamp = DateTime.now().toIso8601String();
           final signature = _generateSignature(
@@ -215,7 +206,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
             });
           }
         } else {
-          // ── Server reachable but returned an error (e.g. 400, 403) ─────
           if (mounted) {
             setState(() => _isLoading = false);
             _showError(e.response?.data?['message']?.toString() ?? e.message ?? e.toString());
@@ -229,8 +219,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
       }
     }
   }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
 
   void _showError(String message) {
     showDialog(
@@ -307,13 +295,11 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
               const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.info_outline,
-                      size: 14, color: Color(0xFFF59E0B)),
+                  Icon(Icons.info_outline, size: 14, color: Color(0xFFF59E0B)),
                   SizedBox(width: 4),
                   Text(
                     'Go to Home and tap Sync when back online',
-                    style:
-                        TextStyle(fontSize: 11, color: Color(0xFFF59E0B)),
+                    style: TextStyle(fontSize: 11, color: Color(0xFFF59E0B)),
                   ),
                 ],
               ),
@@ -331,8 +317,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -342,8 +326,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Scan QR to find recipient ─────────────────────────────────
-            _SectionCard(
+            SectionCard(
               icon: Icons.qr_code_scanner,
               title: 'Find Recipient via QR',
               subtitle: 'Scan the recipient\'s PayMesh QR code',
@@ -364,8 +347,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
 
             const SizedBox(height: 16),
 
-            // ── Be Discoverable (BLE) ─────────────────────────────────────
-            _SectionCard(
+            SectionCard(
               icon: Icons.broadcast_on_personal,
               title: 'Be Discoverable via Bluetooth',
               subtitle: 'Let nearby senders find your device',
@@ -397,8 +379,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
 
             const SizedBox(height: 16),
 
-            // ── Scan for Nearby (BLE) ─────────────────────────────────────
-            _SectionCard(
+            SectionCard(
               icon: Icons.person_search,
               title: 'Find Nearby via Bluetooth',
               subtitle: 'Scan for PayMesh devices in range',
@@ -469,7 +450,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
 
             const SizedBox(height: 16),
 
-            // ── Send Form (visible after recipient is selected) ───────────
             if (_recipientId != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
@@ -479,8 +459,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle,
-                        color: Color(0xFF10B981)),
+                    const Icon(Icons.check_circle, color: Color(0xFF10B981)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -495,8 +474,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                           Text(
                             FormatUtil.formatUserId(_recipientId!),
                             style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF047857)),
+                                fontSize: 12, color: Color(0xFF047857)),
                           ),
                         ],
                       ),
@@ -539,8 +517,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _send,
                   style: ElevatedButton.styleFrom(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 16)),
+                      padding: const EdgeInsets.symmetric(vertical: 16)),
                   child: _isLoading
                       ? const SizedBox(
                           height: 20,
@@ -549,21 +526,18 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                               strokeWidth: 2, color: Colors.white))
                       : const Text('Send Money',
                           style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600)),
+                              fontSize: 16, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(height: 8),
               const Row(
                 children: [
-                  Icon(Icons.info_outline,
-                      size: 14, color: Color(0xFF9CA3AF)),
+                  Icon(Icons.info_outline, size: 14, color: Color(0xFF9CA3AF)),
                   SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       "Online: transferred instantly. Offline: saved locally and synced when network returns.",
-                      style: TextStyle(
-                          fontSize: 11, color: Color(0xFF9CA3AF)),
+                      style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
                     ),
                   ),
                 ],
@@ -571,60 +545,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
             ],
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ── Reusable section card ──────────────────────────────────────────────────────
-
-class _SectionCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final Color borderColor;
-  final Widget child;
-
-  const _SectionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.borderColor,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: const Color(0xFF2563EB), size: 20),
-              const SizedBox(width: 8),
-              Text(title,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      color: Color(0xFF1F2937))),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(subtitle,
-              style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF6B7280))),
-          const SizedBox(height: 12),
-          child,
-        ],
       ),
     );
   }

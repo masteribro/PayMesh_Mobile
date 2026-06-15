@@ -108,6 +108,41 @@ class AuthService {
     }
   }
 
+  /// Fetch a fresh user profile from the backend and update the local cache.
+  /// Returns null if the network is unavailable.
+  Future<AuthResponse?> fetchFreshProfile(String userId) async {
+    try {
+      final response = await _apiClient.get('${ApiConstants.usersBase}/$userId');
+      final data = response.data as Map<String, dynamic>;
+      final cached = await getCachedAuthResponse();
+      final updated = AuthResponse(
+        token: cached?.token ?? '',
+        userId: userId,
+        username: data['username'] as String? ?? cached?.username ?? '',
+        email: data['email'] as String? ?? cached?.email ?? '',
+        balance: (data['balance'] as num).toDouble(),
+        pendingOfflineAmount: (data['pendingOfflineAmount'] as num).toDouble(),
+        pendingOfflineTransactionCount:
+            data['pendingOfflineTransactionCount'] as int,
+      );
+      await _secureStorage.write(
+        key: _userDataKey,
+        value: jsonEncode(updated.toJson()),
+      );
+      return updated;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Top up the user's wallet balance.
+  Future<void> topUp({required String userId, required double amount}) async {
+    await _apiClient.post(
+      '${ApiConstants.usersBase}/$userId/topup',
+      data: {'amount': amount},
+    );
+  }
+
   Future<void> _saveAuthData(AuthResponse authResponse) async {
     await _secureStorage.write(key: _tokenKey, value: authResponse.token);
     await _secureStorage.write(key: _userIdKey, value: authResponse.userId);

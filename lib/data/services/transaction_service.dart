@@ -5,6 +5,7 @@ import '../dto/offline_allowance.dart';
 import '../dto/sync_response.dart';
 import '../dto/sync_transactions_request.dart';
 import '../dto/transaction_response.dart';
+import '../models/transaction_model.dart';
 import 'api_client.dart';
 import 'api_constants.dart';
 
@@ -112,6 +113,50 @@ class TransactionService {
       '${ApiConstants.offlineAllowanceBase}/$userId',
     );
     return OfflineAllowance.fromJson(response.data);
+  }
+
+  /// Fetch the confirmed transaction history for a user from the backend.
+  /// Returns an empty list if the network is unavailable.
+  Future<List<TransactionModel>> getTransactionHistory(String userId) async {
+    try {
+      final response = await _apiClient
+          .get('${ApiConstants.transactionHistoryBase}/$userId');
+      final list = response.data as List<dynamic>;
+      return list.map((item) {
+        final m = item as Map<String, dynamic>;
+        return TransactionModel(
+          id: m['id'] as String,
+          senderId: m['senderId'] as String,
+          receiverId: m['receiverId'] as String,
+          amount: (m['amount'] as num).toDouble(),
+          timestamp: DateTime.parse(m['timestamp'] as String),
+          signature: '',
+          status: m['status'] as String,
+          syncedAt: m['syncedAt'] != null
+              ? DateTime.parse(m['syncedAt'] as String)
+              : null,
+          createdAt: DateTime.parse(m['timestamp'] as String),
+          conflictReason: m['conflictReason'] as String?,
+        );
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Convert a locally-stored pending request to a [TransactionModel].
+  TransactionModel pendingToModel(OfflineTransactionRequest r) {
+    final ts = DateTime.tryParse(r.timestamp) ?? DateTime.now();
+    return TransactionModel(
+      id: r.id,
+      senderId: r.senderId,
+      receiverId: r.receiverId,
+      amount: r.amount,
+      timestamp: ts,
+      signature: r.signature,
+      status: 'PENDING_SYNC',
+      createdAt: ts,
+    );
   }
 
   Future<void> clearPendingTransactions() async {
