@@ -1,256 +1,61 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
-import 'package:crypto/crypto.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import '../../data/services/auth_service.dart';
-import '../../data/services/transaction_service.dart';
-import '../../domain/services/bluetooth_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/utils/format_util.dart';
+import '../blocs/send_money/send_money_bloc.dart';
 import '../widgets/section_card.dart';
 import 'payment_qr_screen.dart';
 import 'qr_scanner_screen.dart';
 
-class SendMoneyScreen extends StatefulWidget {
+class SendMoneyScreen extends StatelessWidget {
   const SendMoneyScreen({super.key});
 
   @override
-  State<SendMoneyScreen> createState() => _SendMoneyScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => SendMoneyBloc(),
+      child: const _SendMoneyView(),
+    );
+  }
 }
 
-class _SendMoneyScreenState extends State<SendMoneyScreen> {
-  final _authService = AuthService();
-  final _txService = TransactionService();
-  final _bleService = PayMeshBluetoothService();
+class _SendMoneyView extends StatefulWidget {
+  const _SendMoneyView();
 
+  @override
+  State<_SendMoneyView> createState() => _SendMoneyViewState();
+}
+
+class _SendMoneyViewState extends State<_SendMoneyView> {
   final _amountController = TextEditingController();
-
-  bool _isLoading = false;
-  bool _isAdvertising = false;
-  bool _isScanning = false;
-  List<PayMeshDevice> _nearbyDevices = [];
-  StreamSubscription? _scanSub;
-
-  String? _recipientId;
-  String? _recipientName;
 
   @override
   void dispose() {
     _amountController.dispose();
-    _scanSub?.cancel();
-    _bleService.stopScan();
-    _bleService.stopAdvertising();
     super.dispose();
   }
 
-  bool _isNetworkError(Object e) {
-    if (e is DioException) {
-      return e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.sendTimeout ||
-          e.type == DioExceptionType.connectionError;
-    }
-    return false;
-  }
-
-  String _generateUuid() {
-    final random = Random.secure();
-    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
-        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20, 32)}';
-  }
-
-  String _generateSignature({
-    required String id,
-    required String senderId,
-    required String receiverId,
-    required double amount,
-    required String timestamp,
-  }) {
-    final data = '$id:$senderId:$receiverId:$amount:$timestamp';
-    return sha256.convert(utf8.encode(data)).toString();
-  }
-
-  Future<void> _scanQr() async {
+  Future<void> _scanQr(BuildContext context) async {
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(builder: (_) => const QrScannerScreen()),
     );
-    if (result == null || !mounted) return;
-    setState(() {
-      _recipientId = result['userId'] as String?;
-      _recipientName = result['username'] as String?;
-    });
-    if (_recipientId != null) {
+    if (result == null || !context.mounted) return;
+    final userId = result['userId'] as String?;
+    final username = result['username'] as String?;
+    if (userId != null) {
+      context
+          .read<SendMoneyBloc>()
+          .add(RecipientQrScanned(userId: userId, username: username));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Recipient set to ${_recipientName ?? _recipientId}'),
+          content: Text('Recipient set to ${username ?? userId}'),
           backgroundColor: const Color(0xFF10B981),
         ),
       );
     }
   }
 
-  Future<void> _startAdvertise() async {
-    final userId = await _authService.getUserId();
-    final cached = await _authService.getCachedAuthResponse();
-    if (userId == null || cached == null) return;
-    try {
-      await _bleService.startAdvertising(userId: userId, username: cached.username);
-      if (mounted) setState(() => _isAdvertising = true);
-    } catch (e) {
-      final msg = e.toString();
-      if (msg.contains('permissions denied')) {
-        _showError('Bluetooth permission denied.\n\nGo to Settings → Apps → PayMesh → Permissions and enable Bluetooth.');
-      } else {
-        _showError('Could not start advertising: $msg');
-      }
-    }
-  }
-
-  Future<void> _stopAdvertise() async {
-    await _bleService.stopAdvertising();
-    if (mounted) setState(() => _isAdvertising = false);
-  }
-
-  void _startScan() {
-    setState(() {
-      _isScanning = true;
-      _nearbyDevices = [];
-    });
-    _scanSub?.cancel();
-    _scanSub = _bleService.scanForDevices().listen(
-      (devices) {
-        if (mounted) setState(() => _nearbyDevices = devices);
-      },
-      onDone: () {
-        if (mounted) setState(() => _isScanning = false);
-      },
-    );
-  }
-
-  void _selectDevice(PayMeshDevice device) {
-    setState(() {
-      _recipientId = device.userId;
-      _recipientName = device.displayName;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Recipient set to ${device.displayName}'),
-        backgroundColor: const Color(0xFF10B981),
-      ),
-    );
-  }
-
-  Future<void> _send() async {
-    if (_recipientId == null) {
-      _showError('Scan the recipient\'s QR code first.');
-      return;
-    }
-    final amountText = _amountController.text.trim();
-    final amount = double.tryParse(amountText);
-    if (amount == null || amount <= 0) {
-      _showError('Enter a valid amount.');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      final senderId = await _authService.getUserId();
-      if (senderId == null) throw Exception('Not logged in');
-
-      try {
-        final result = await _txService.sendMoneyOnline(
-          senderId: senderId,
-          receiverId: _recipientId!,
-          amount: amount,
-        );
-        if (mounted) {
-          setState(() => _isLoading = false);
-          _showSuccessSheet(result.id, amount, _recipientName ?? _recipientId!,
-              isOffline: false);
-          _amountController.clear();
-          setState(() {
-            _recipientId = null;
-            _recipientName = null;
-          });
-        }
-      } on DioException catch (e) {
-        if (_isNetworkError(e)) {
-          // Build the offline transaction
-          final id = _generateUuid();
-          final timestamp = DateTime.now().toIso8601String();
-          final signature = _generateSignature(
-            id: id,
-            senderId: senderId,
-            receiverId: _recipientId!,
-            amount: amount,
-            timestamp: timestamp,
-          );
-          await _txService.createOfflineTransaction(
-            id: id,
-            senderId: senderId,
-            receiverId: _recipientId!,
-            amount: amount,
-            timestamp: timestamp,
-            signature: signature,
-          );
-
-          // Fetch sender name for the payment QR
-          final cached = await _authService.getCachedAuthResponse();
-          final senderName = cached?.username ?? senderId;
-          final recipientName = _recipientName ?? _recipientId!;
-          final receiverId = _recipientId!;
-
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-              _recipientId = null;
-              _recipientName = null;
-            });
-            _amountController.clear();
-            _showOfflineSuccessSheet(
-              id: id,
-              senderId: senderId,
-              senderName: senderName,
-              receiverId: receiverId,
-              recipientName: recipientName,
-              amount: amount,
-              timestamp: timestamp,
-              signature: signature,
-            );
-          }
-        } else {
-          if (mounted) {
-            setState(() => _isLoading = false);
-            _showError(e.response?.data?['message']?.toString() ??
-                e.message ??
-                e.toString());
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        _showError(e.toString());
-      }
-    }
-  }
-
-  void _showOfflineSuccessSheet({
-    required String id,
-    required String senderId,
-    required String senderName,
-    required String receiverId,
-    required String recipientName,
-    required double amount,
-    required String timestamp,
-    required String signature,
-  }) {
+  void _showOfflineSuccessSheet(BuildContext context, SendMoneyState state) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -270,8 +75,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
             ),
             const SizedBox(height: 16),
             const Text('Queued!',
-                style:
-                    TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             const Text(
               'Saved locally — will sync when online',
@@ -279,21 +83,21 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              '₦${FormatUtil.formatCurrencyWithComma(amount)}',
+              '₦${FormatUtil.formatCurrencyWithComma(state.offlineAmount ?? 0)}',
               style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFFD97706)),
             ),
             const SizedBox(height: 8),
-            Text('To: $recipientName',
+            Text('To: ${state.offlineRecipientName ?? ''}',
                 style: const TextStyle(color: Color(0xFF6B7280))),
             const SizedBox(height: 4),
-            Text('TX: ${FormatUtil.formatTransactionId(id)}',
+            Text(
+                'TX: ${FormatUtil.formatTransactionId(state.offlineTxId ?? '')}',
                 style: const TextStyle(
                     fontSize: 12, color: Color(0xFF9CA3AF))),
             const SizedBox(height: 16),
-            // Payment QR CTA
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -301,16 +105,15 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFBFDBFE)),
               ),
-              child: Row(
+              child: const Row(
                 children: [
-                  const Icon(Icons.qr_code_2,
-                      color: Color(0xFF2563EB), size: 20),
-                  const SizedBox(width: 10),
-                  const Expanded(
+                  Icon(Icons.qr_code_2, color: Color(0xFF2563EB), size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
                     child: Text(
                       'Show a QR so the recipient can receive the funds now — even offline.',
-                      style: TextStyle(
-                          fontSize: 12, color: Color(0xFF1D4ED8)),
+                      style:
+                          TextStyle(fontSize: 12, color: Color(0xFF1D4ED8)),
                     ),
                   ),
                 ],
@@ -321,19 +124,19 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pop(context); // close sheet
+                  Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => PaymentQrScreen(
-                        id: id,
-                        senderId: senderId,
-                        senderName: senderName,
-                        receiverId: receiverId,
-                        recipientName: recipientName,
-                        amount: amount,
-                        timestamp: timestamp,
-                        signature: signature,
+                        id: state.offlineTxId!,
+                        senderId: state.offlineSenderId!,
+                        senderName: state.offlineSenderName!,
+                        receiverId: state.offlineReceiverId!,
+                        recipientName: state.offlineRecipientName!,
+                        amount: state.offlineAmount!,
+                        timestamp: state.offlineTimestamp!,
+                        signature: state.offlineSignature!,
                       ),
                     ),
                   );
@@ -356,25 +159,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
     );
   }
 
-  void _showError(String message) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Row(children: [
-          Icon(Icons.error_outline, color: Color(0xFFEF4444)),
-          SizedBox(width: 8),
-          Text('Error'),
-        ]),
-        content: Text(message),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
-        ],
-      ),
-    );
-  }
-
-  void _showSuccessSheet(String txId, double amount, String recipientName,
-      {bool isOffline = false}) {
+  void _showSuccessSheet(BuildContext context, SendMoneyState state) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -387,59 +172,32 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
             Container(
               width: 64,
               height: 64,
-              decoration: BoxDecoration(
-                  color: isOffline
-                      ? const Color(0xFFFEF3C7)
-                      : const Color(0xFFD1FAE5),
-                  shape: BoxShape.circle),
-              child: Icon(
-                isOffline ? Icons.schedule : Icons.check_circle,
-                color: isOffline
-                    ? const Color(0xFFF59E0B)
-                    : const Color(0xFF10B981),
-                size: 36,
-              ),
+              decoration: const BoxDecoration(
+                  color: Color(0xFFD1FAE5), shape: BoxShape.circle),
+              child: const Icon(Icons.check_circle,
+                  color: Color(0xFF10B981), size: 36),
             ),
             const SizedBox(height: 16),
-            Text(isOffline ? 'Queued!' : 'Sent!',
-                style: const TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text('Sent!',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(
-              isOffline
-                  ? 'Saved locally — will sync when online'
-                  : 'Money transferred successfully',
-              style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+            const Text(
+              'Money transferred successfully',
+              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
             ),
             const SizedBox(height: 8),
             Text(
-              '₦${FormatUtil.formatCurrencyWithComma(amount)}',
+              '₦${FormatUtil.formatCurrencyWithComma(state.onlineAmount ?? 0)}',
               style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFD97706)),
+                  color: Color(0xFF10B981)),
             ),
-            const SizedBox(height: 8),
-            Text('To: $recipientName',
-                style: const TextStyle(color: Color(0xFF6B7280))),
             const SizedBox(height: 4),
-            Text('TX: ${FormatUtil.formatTransactionId(txId)}',
+            Text(
+                'TX: ${FormatUtil.formatTransactionId(state.onlineTxId ?? '')}',
                 style: const TextStyle(
                     fontSize: 12, color: Color(0xFF9CA3AF))),
-            if (isOffline) ...[
-              const SizedBox(height: 8),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.info_outline, size: 14, color: Color(0xFFF59E0B)),
-                  SizedBox(width: 4),
-                  Text(
-                    'Go to Home and tap Sync when back online',
-                    style: TextStyle(fontSize: 11, color: Color(0xFFF59E0B)),
-                  ),
-                ],
-              ),
-            ],
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -453,235 +211,315 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
     );
   }
 
+  void _showError(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Row(children: [
+          Icon(Icons.error_outline, color: Color(0xFFEF4444)),
+          SizedBox(width: 8),
+          Text('Error'),
+        ]),
+        content: Text(message),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'))
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Send Money')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionCard(
-              icon: Icons.qr_code_scanner,
-              title: 'Find Recipient via QR',
-              subtitle: 'Scan the recipient\'s PayMesh QR code',
-              color: const Color(0xFFF0F9FF),
-              borderColor: const Color(0xFFBFDBFE),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _scanQr,
-                  icon: const Icon(Icons.qr_code_scanner),
-                  label: const Text('Scan QR Code'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            SectionCard(
-              icon: Icons.broadcast_on_personal,
-              title: 'Be Discoverable via Bluetooth',
-              subtitle: 'Let nearby senders find your device',
-              color: const Color(0xFFF0FDF4),
-              borderColor: const Color(0xFFBBF7D0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _isAdvertising
-                          ? 'Broadcasting your ID…'
-                          : 'Not broadcasting',
-                      style: TextStyle(
-                        color: _isAdvertising
-                            ? const Color(0xFF16A34A)
-                            : const Color(0xFF6B7280),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  Switch(
-                    value: _isAdvertising,
-                    onChanged: (v) => v ? _startAdvertise() : _stopAdvertise(),
-                    activeThumbColor: const Color(0xFF16A34A),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            SectionCard(
-              icon: Icons.person_search,
-              title: 'Find Nearby via Bluetooth',
-              subtitle: 'Scan for PayMesh devices in range',
-              color: const Color(0xFFF9FAFB),
-              borderColor: const Color(0xFFE5E7EB),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
+    return BlocConsumer<SendMoneyBloc, SendMoneyState>(
+      listenWhen: (prev, curr) => prev.status != curr.status,
+      listener: (context, state) {
+        switch (state.status) {
+          case SendMoneyStatus.onlineSuccess:
+            _amountController.clear();
+            _showSuccessSheet(context, state);
+            context.read<SendMoneyBloc>().add(SendMoneyReset());
+          case SendMoneyStatus.offlineQueued:
+            _amountController.clear();
+            _showOfflineSuccessSheet(context, state);
+            context.read<SendMoneyBloc>().add(SendMoneyReset());
+          case SendMoneyStatus.error:
+            _showError(
+                context, state.errorMessage ?? 'An error occurred');
+            context.read<SendMoneyBloc>().add(SendMoneyReset());
+          default:
+            break;
+        }
+      },
+      builder: (context, state) {
+        final isSubmitting = state.status == SendMoneyStatus.submitting;
+        return Scaffold(
+          appBar: AppBar(title: const Text('Send Money')),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SectionCard(
+                  icon: Icons.qr_code_scanner,
+                  title: 'Find Recipient via QR',
+                  subtitle: 'Scan the recipient\'s PayMesh QR code',
+                  color: const Color(0xFFF0F9FF),
+                  borderColor: const Color(0xFFBFDBFE),
+                  child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: _isScanning ? null : _startScan,
-                      icon: _isScanning
+                      onPressed: () => _scanQr(context),
+                      icon: const Icon(Icons.qr_code_scanner),
+                      label: const Text('Scan QR Code'),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                SectionCard(
+                  icon: Icons.broadcast_on_personal,
+                  title: 'Be Discoverable via Bluetooth',
+                  subtitle: 'Let nearby senders find your device',
+                  color: const Color(0xFFF0FDF4),
+                  borderColor: const Color(0xFFBBF7D0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          state.isAdvertising
+                              ? 'Broadcasting your ID…'
+                              : 'Not broadcasting',
+                          style: TextStyle(
+                            color: state.isAdvertising
+                                ? const Color(0xFF16A34A)
+                                : const Color(0xFF6B7280),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      Switch(
+                        value: state.isAdvertising,
+                        onChanged: (v) => context
+                            .read<SendMoneyBloc>()
+                            .add(AdvertisingToggled(v)),
+                        activeThumbColor: const Color(0xFF16A34A),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                SectionCard(
+                  icon: Icons.person_search,
+                  title: 'Find Nearby via Bluetooth',
+                  subtitle: 'Scan for PayMesh devices in range',
+                  color: const Color(0xFFF9FAFB),
+                  borderColor: const Color(0xFFE5E7EB),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: state.isScanning
+                              ? null
+                              : () => context
+                                  .read<SendMoneyBloc>()
+                                  .add(BleScanStarted()),
+                          icon: state.isScanning
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white))
+                              : const Icon(Icons.bluetooth_searching),
+                          label: Text(state.isScanning
+                              ? 'Scanning…'
+                              : 'Scan for Nearby'),
+                          style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12)),
+                        ),
+                      ),
+                      if (state.nearbyDevices.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        const Text('Nearby PayMesh Users:',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13)),
+                        const SizedBox(height: 8),
+                        ...state.nearbyDevices.map((d) {
+                          final isSelected =
+                              state.recipientId == d.userId;
+                          final initials = d.displayName.length >= 2
+                              ? d.displayName
+                                  .substring(0, 2)
+                                  .toUpperCase()
+                              : d.displayName.toUpperCase();
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              backgroundColor: const Color(0xFF2563EB)
+                                  .withValues(alpha: 0.1),
+                              child: Text(initials,
+                                  style: const TextStyle(
+                                      color: Color(0xFF2563EB),
+                                      fontSize: 12)),
+                            ),
+                            title: Text(d.displayName,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600)),
+                            subtitle: Text('Signal: ${d.rssi} dBm'),
+                            trailing: isSelected
+                                ? const Icon(Icons.check_circle,
+                                    color: Color(0xFF10B981))
+                                : TextButton(
+                                    onPressed: () => context
+                                        .read<SendMoneyBloc>()
+                                        .add(
+                                            RecipientFromDeviceSelected(d)),
+                                    child: const Text('Select'),
+                                  ),
+                          );
+                        }),
+                      ] else if (!state.isScanning)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 12),
+                          child: Text(
+                            'No PayMesh devices found. Make sure the recipient has "Be Discoverable" turned on.',
+                            style: TextStyle(
+                                color: Color(0xFF9CA3AF), fontSize: 12),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                if (state.recipientId != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD1FAE5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle,
+                            color: Color(0xFF10B981)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Recipient: ${state.recipientName ?? 'Selected'}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF065F46)),
+                              ),
+                              Text(
+                                FormatUtil.formatUserId(state.recipientId!),
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF047857)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close,
+                              color: Color(0xFF047857), size: 18),
+                          onPressed: () => context
+                              .read<SendMoneyBloc>()
+                              .add(RecipientCleared()),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Amount',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1F2937))),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _amountController,
+                    decoration: const InputDecoration(
+                      hintText: '0.00',
+                      prefixText: '₦ ',
+                      prefixStyle: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2563EB)),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : () {
+                              final amount = double.tryParse(
+                                  _amountController.text.trim());
+                              if (amount == null || amount <= 0) {
+                                _showError(
+                                    context, 'Enter a valid amount.');
+                                return;
+                              }
+                              context.read<SendMoneyBloc>().add(
+                                  SendMoneySubmitted(amount));
+                            },
+                      style: ElevatedButton.styleFrom(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 16)),
+                      child: isSubmitting
                           ? const SizedBox(
-                              width: 16,
-                              height: 16,
+                              height: 20,
+                              width: 20,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.bluetooth_searching),
-                      label: Text(_isScanning ? 'Scanning…' : 'Scan for Nearby'),
-                      style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12)),
+                          : const Text('Send Money',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600)),
                     ),
                   ),
-                  if (_nearbyDevices.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    const Text('Nearby PayMesh Users:',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    ...List.generate(_nearbyDevices.length, (i) {
-                      final d = _nearbyDevices[i];
-                      final isSelected = _recipientId == d.userId;
-                      final initials = d.displayName.length >= 2
-                          ? d.displayName.substring(0, 2).toUpperCase()
-                          : d.displayName.toUpperCase();
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundColor:
-                              const Color(0xFF2563EB).withValues(alpha: 0.1),
-                          child: Text(initials,
-                              style: const TextStyle(
-                                  color: Color(0xFF2563EB), fontSize: 12)),
-                        ),
-                        title: Text(d.displayName,
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text('Signal: ${d.rssi} dBm'),
-                        trailing: isSelected
-                            ? const Icon(Icons.check_circle,
-                                color: Color(0xFF10B981))
-                            : TextButton(
-                                onPressed: () => _selectDevice(d),
-                                child: const Text('Select'),
-                              ),
-                      );
-                    }),
-                  ] else if (!_isScanning)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 12),
-                      child: Text(
-                        'No PayMesh devices found. Make sure the recipient has "Be Discoverable" turned on.',
-                        style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            if (_recipientId != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD1FAE5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.check_circle, color: Color(0xFF10B981)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Recipient: ${_recipientName ?? 'Selected'}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF065F46)),
-                          ),
-                          Text(
-                            FormatUtil.formatUserId(_recipientId!),
-                            style: const TextStyle(
-                                fontSize: 12, color: Color(0xFF047857)),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Color(0xFF047857), size: 18),
-                      onPressed: () => setState(() {
-                        _recipientId = null;
-                        _recipientName = null;
-                      }),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text('Amount',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1F2937))),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _amountController,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  hintText: '0.00',
-                  prefixText: '₦ ',
-                  prefixStyle: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2563EB)),
-                ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _send,
-                  style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16)),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : const Text('Send Money',
+                  const SizedBox(height: 8),
+                  const Row(
+                    children: [
+                      Icon(Icons.info_outline,
+                          size: 14, color: Color(0xFF9CA3AF)),
+                      SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Online: transferred instantly. Offline: saved locally and synced when network returns.',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600)),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Row(
-                children: [
-                  Icon(Icons.info_outline, size: 14, color: Color(0xFF9CA3AF)),
-                  SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      "Online: transferred instantly. Offline: saved locally and synced when network returns.",
-                      style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
-                    ),
+                              fontSize: 11, color: Color(0xFF9CA3AF)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,51 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/transaction_model.dart';
 import '../../domain/utils/format_util.dart';
-import '../controllers/transaction_history_controller.dart';
+import '../blocs/transaction_history/transaction_history_bloc.dart';
 import '../widgets/transaction_history/history_transaction_tile.dart';
 
-class TransactionHistoryScreen extends StatefulWidget {
+class TransactionHistoryScreen extends StatelessWidget {
   const TransactionHistoryScreen({super.key});
 
   @override
-  State<TransactionHistoryScreen> createState() =>
-      _TransactionHistoryScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => TransactionHistoryBloc(),
+      child: const _TransactionHistoryView(),
+    );
+  }
 }
 
-class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
-  late final TransactionHistoryController _controller;
-  String _filterStatus = 'ALL';
+class _TransactionHistoryView extends StatelessWidget {
+  const _TransactionHistoryView();
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = TransactionHistoryController();
-    _controller.loadData();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  List<TransactionModel> get _filtered {
-    final all = _controller.transactions;
-    final userId = _controller.userId;
-    switch (_filterStatus) {
-      case 'SENT':
-        return all.where((t) => t.senderId == userId).toList();
-      case 'RECEIVED':
-        return all.where((t) => t.receiverId == userId).toList();
-      case 'PENDING':
-        return all.where((t) => t.isPendingSync).toList();
-      default:
-        return all;
-    }
-  }
-
-  void _showTransactionDetails(TransactionModel tx) {
-    final isSent = tx.senderId == _controller.userId;
+  void _showTransactionDetails(
+      BuildContext context, TransactionModel tx, String userId) {
+    final isSent = tx.senderId == userId;
 
     showModalBottomSheet(
       context: context,
@@ -126,36 +103,40 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _controller,
-      builder: (context, _) {
+    return BlocBuilder<TransactionHistoryBloc, TransactionHistoryState>(
+      builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Transaction History'),
             elevation: 0,
           ),
-          body: _controller.isLoading
+          body: state.isLoading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
-                  onRefresh: _controller.loadData,
+                  onRefresh: () async => context
+                      .read<TransactionHistoryBloc>()
+                      .add(TransactionHistoryLoadRequested()),
                   child: Column(
                     children: [
                       _FilterBar(
-                        selected: _filterStatus,
-                        onSelected: (v) =>
-                            setState(() => _filterStatus = v),
+                        selected: state.filterStatus,
+                        onSelected: (v) => context
+                            .read<TransactionHistoryBloc>()
+                            .add(TransactionHistoryFilterChanged(v)),
                       ),
                       Expanded(
-                        child: _filtered.isEmpty
-                            ? _EmptyState()
+                        child: state.filtered.isEmpty
+                            ? const _EmptyState()
                             : ListView.builder(
-                                itemCount: _filtered.length,
+                                itemCount: state.filtered.length,
                                 itemBuilder: (context, index) =>
                                     HistoryTransactionTile(
-                                  transaction: _filtered[index],
-                                  currentUserId: _controller.userId,
+                                  transaction: state.filtered[index],
+                                  currentUserId: state.userId,
                                   onTap: () => _showTransactionDetails(
-                                      _filtered[index]),
+                                      context,
+                                      state.filtered[index],
+                                      state.userId),
                                 ),
                               ),
                       ),
@@ -212,6 +193,8 @@ class _FilterBar extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -258,7 +241,8 @@ class _DetailRow extends StatelessWidget {
           ),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            style: const TextStyle(
+                fontWeight: FontWeight.w600, fontSize: 14),
           ),
         ],
       ),

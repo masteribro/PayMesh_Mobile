@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../domain/utils/format_util.dart';
-import '../controllers/home_controller.dart';
+import '../blocs/home/home_bloc.dart';
 import '../widgets/home/balance_card.dart';
 import '../widgets/home/pending_sync_banner.dart';
 import '../widgets/home/transaction_list_tile.dart';
@@ -10,31 +11,23 @@ import 'scan_incoming_payment_screen.dart';
 
 enum _MenuOption { topUp, logout }
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => HomeBloc(),
+      child: const _HomeView(),
+    );
+  }
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  late final HomeController _controller;
+class _HomeView extends StatelessWidget {
+  const _HomeView();
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = HomeController();
-    _controller.loadData();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _showMyQrSheet() {
-    final user = _controller.user;
+  void _showMyQrSheet(BuildContext context, HomeState state) {
+    final user = state.user;
     if (user == null) return;
 
     final qrData = jsonEncode({
@@ -86,10 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showTopUpSheet() {
+  void _showTopUpSheet(BuildContext context, HomeState state) {
     final amountController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    bool isLoading = false;
 
     showModalBottomSheet(
       context: context,
@@ -97,130 +89,102 @@ class _HomeScreenState extends State<HomeScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Top Up Balance',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Current balance: ₦${FormatUtil.formatCurrencyWithComma(_controller.user?.balance ?? 0)}',
-                  style: const TextStyle(color: Color(0xFF6B7280)),
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: amountController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Amount',
-                    prefixText: '₦ ',
-                    hintText: '0.00',
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Top Up Balance',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Enter an amount';
-                    final n = double.tryParse(v);
-                    if (n == null || n <= 0) return 'Enter a valid amount';
-                    return null;
-                  },
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Current balance: ₦${FormatUtil.formatCurrencyWithComma(state.user?.balance ?? 0)}',
+                style: const TextStyle(color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: amountController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Amount',
+                  prefixText: '₦ ',
+                  hintText: '0.00',
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    for (final preset in [100.0, 500.0, 1000.0])
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: OutlinedButton(
-                          onPressed: () => amountController.text =
-                              preset.toStringAsFixed(0),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                          ),
-                          child: Text('₦${preset.toStringAsFixed(0)}'),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Enter an amount';
+                  final n = double.tryParse(v);
+                  if (n == null || n <= 0) return 'Enter a valid amount';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  for (final preset in [100.0, 500.0, 1000.0])
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: OutlinedButton(
+                        onPressed: () =>
+                            amountController.text = preset.toStringAsFixed(0),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
                         ),
+                        child: Text('₦${preset.toStringAsFixed(0)}'),
                       ),
-                  ],
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (!formKey.currentState!.validate()) return;
+                    final amount = double.parse(amountController.text);
+                    context.read<HomeBloc>().add(HomeTopUpRequested(amount));
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '₦${FormatUtil.formatCurrencyWithComma(amount)} added to your balance',
+                        ),
+                        backgroundColor: const Color(0xFF10B981),
+                      ),
+                    );
+                  },
+                  child: const Text('Add Money'),
                 ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isLoading
-                        ? null
-                        : () async {
-                            if (!formKey.currentState!.validate()) return;
-                            setSheetState(() => isLoading = true);
-                            try {
-                              final amount =
-                                  double.parse(amountController.text);
-                              await _controller.topUp(amount);
-                              if (mounted) {
-                                Navigator.pop(ctx);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '₦${FormatUtil.formatCurrencyWithComma(amount)} added to your balance',
-                                    ),
-                                    backgroundColor: const Color(0xFF10B981),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              setSheetState(() => isLoading = false);
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Top-up failed: $e'),
-                                    backgroundColor: const Color(0xFFEF4444),
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('Add Money'),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Future<void> _showLogoutDialog() async {
+  Future<void> _showLogoutDialog(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -241,53 +205,55 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-
-    if (confirm == true) {
-      await _controller.logout();
-      if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
-      }
+    if (confirm == true && context.mounted) {
+      context.read<HomeBloc>().add(HomeLogoutRequested());
     }
   }
 
-  Future<void> _scanIncomingPayment() async {
+  Future<void> _scanIncomingPayment(BuildContext context) async {
     final received = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-          builder: (_) => const ScanIncomingPaymentScreen()),
+      MaterialPageRoute(builder: (_) => const ScanIncomingPaymentScreen()),
     );
-    // Refresh home data if a payment was received
-    if (received == true && mounted) {
-      _controller.loadData();
-    }
-  }
-
-  Future<void> _onSync() async {
-    try {
-      final synced = await _controller.syncTransactions();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(synced
-              ? 'Transactions synced successfully'
-              : 'No pending transactions to sync'),
-        ),
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sync failed: $e')),
-        );
-      }
+    if (received == true && context.mounted) {
+      context.read<HomeBloc>().add(HomeLoadRequested());
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _controller,
-      builder: (context, _) {
-        final controller = _controller;
+    return BlocConsumer<HomeBloc, HomeState>(
+      listenWhen: (prev, curr) =>
+          prev.loggedOut != curr.loggedOut ||
+          prev.syncStatus != curr.syncStatus,
+      listener: (context, state) {
+        if (state.loggedOut) {
+          Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+          return;
+        }
+        switch (state.syncStatus) {
+          case HomeSyncStatus.success:
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Transactions synced successfully')),
+            );
+          case HomeSyncStatus.nothingToSync:
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('No pending transactions to sync')),
+            );
+          case HomeSyncStatus.failure:
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Sync failed: ${state.syncError ?? ''}'),
+                backgroundColor: const Color(0xFFEF4444),
+              ),
+            );
+          default:
+            break;
+        }
+      },
+      builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
             title: const Text('PayMesh Wallet'),
@@ -300,13 +266,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: controller.isOnline
+                      color: state.isOnline
                           ? const Color(0xFF10B981)
                           : const Color(0xFFEF4444),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      controller.isOnline ? '✓ Online' : '📡 Offline',
+                      state.isOnline ? '✓ Online' : '📡 Offline',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -319,8 +285,12 @@ class _HomeScreenState extends State<HomeScreen> {
               PopupMenuButton<_MenuOption>(
                 icon: const Icon(Icons.more_vert, color: Colors.white),
                 onSelected: (option) {
-                  if (option == _MenuOption.topUp) _showTopUpSheet();
-                  if (option == _MenuOption.logout) _showLogoutDialog();
+                  if (option == _MenuOption.topUp) {
+                    _showTopUpSheet(context, state);
+                  }
+                  if (option == _MenuOption.logout) {
+                    _showLogoutDialog(context);
+                  }
                 },
                 itemBuilder: (_) => const [
                   PopupMenuItem(
@@ -344,15 +314,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          body: controller.isLoading
+          body: state.isLoading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
-                  onRefresh: controller.loadData,
+                  onRefresh: () async =>
+                      context.read<HomeBloc>().add(HomeLoadRequested()),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Column(
                       children: [
-                        if (controller.error != null)
+                        if (state.error != null)
                           Container(
                             margin: const EdgeInsets.all(16),
                             padding: const EdgeInsets.all(12),
@@ -366,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: Color(0xFFDC2626)),
                                 const SizedBox(width: 8),
                                 Text(
-                                  controller.error!,
+                                  state.error!,
                                   style: const TextStyle(
                                       color: Color(0xFFDC2626)),
                                 ),
@@ -374,8 +345,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
 
-                        if (controller.user != null)
-                          BalanceCard(user: controller.user!),
+                        if (state.user != null)
+                          BalanceCard(user: state.user!),
 
                         Padding(
                           padding:
@@ -386,21 +357,35 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Expanded(
                                     child: ElevatedButton.icon(
-                                      onPressed: _showMyQrSheet,
+                                      onPressed: () =>
+                                          _showMyQrSheet(context, state),
                                       icon: const Icon(Icons.qr_code),
                                       label: const Text('My QR'),
                                       style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 12),
+                                        padding:
+                                            const EdgeInsets.symmetric(
+                                                vertical: 12),
                                       ),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: OutlinedButton.icon(
-                                      onPressed:
-                                          controller.isOnline ? _onSync : null,
-                                      icon: const Icon(Icons.sync),
+                                      onPressed: state.isOnline
+                                          ? () => context
+                                              .read<HomeBloc>()
+                                              .add(HomeSyncRequested())
+                                          : null,
+                                      icon: state.syncStatus ==
+                                              HomeSyncStatus.syncing
+                                          ? const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child:
+                                                  CircularProgressIndicator(
+                                                      strokeWidth: 2),
+                                            )
+                                          : const Icon(Icons.sync),
                                       label: const Text('Sync'),
                                     ),
                                   ),
@@ -410,7 +395,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               SizedBox(
                                 width: double.infinity,
                                 child: OutlinedButton.icon(
-                                  onPressed: _scanIncomingPayment,
+                                  onPressed: () =>
+                                      _scanIncomingPayment(context),
                                   icon: const Icon(Icons.qr_code_scanner),
                                   label: const Text('Scan Payment QR'),
                                   style: OutlinedButton.styleFrom(
@@ -425,19 +411,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 24),
 
-                        if ((controller.user?.pendingOfflineTransactionCount ??
+                        if ((state.user?.pendingOfflineTransactionCount ??
                                 0) >
                             0)
                           PendingSyncBanner(
-                            count: controller
+                            count: state
                                 .user!.pendingOfflineTransactionCount,
-                            amount: controller.user!.pendingOfflineAmount,
+                            amount:
+                                state.user!.pendingOfflineAmount,
                           ),
 
-                        if (controller.incomingPendingAmount > 0) ...[
+                        if (state.incomingPendingAmount > 0) ...[
                           const SizedBox(height: 8),
                           Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 16),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: const Color(0xFFD1FAE5),
@@ -463,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       Text(
-                                        '₦${FormatUtil.formatCurrency(controller.incomingPendingAmount)} — sync to confirm',
+                                        '₦${FormatUtil.formatCurrency(state.incomingPendingAmount)} — sync to confirm',
                                         style: const TextStyle(
                                           fontSize: 12,
                                           color: Color(0xFF047857),
@@ -502,7 +490,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 12),
 
-                        if (controller.recentTransactions.isEmpty)
+                        if (state.recentTransactions.isEmpty)
                           Padding(
                             padding: const EdgeInsets.all(32),
                             child: Column(
@@ -523,15 +511,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         else
                           ListView.builder(
                             shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
+                            physics:
+                                const NeverScrollableScrollPhysics(),
                             itemCount:
-                                controller.recentTransactions.length,
+                                state.recentTransactions.length,
                             itemBuilder: (context, index) =>
                                 TransactionListTile(
                               transaction:
-                                  controller.recentTransactions[index],
+                                  state.recentTransactions[index],
                               currentUserId:
-                                  controller.user?.userId ?? '',
+                                  state.user?.userId ?? '',
                             ),
                           ),
 

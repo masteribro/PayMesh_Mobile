@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:crypto/crypto.dart';
-import 'package:dio/dio.dart';
 import 'dart:convert';
-import '../../data/services/auth_service.dart';
-import 'login_screen.dart';
+import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../blocs/auth/auth_bloc.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,9 +16,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _authService = AuthService();
-  bool _isLoading = false;
-  String? _errorMessage;
 
   @override
   void dispose() {
@@ -30,23 +26,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  String _generatePublicKey() {
-    // Generate a simple public key from UUID
-    return sha256.convert(utf8.encode(DateTime.now().toString())).toString();
-  }
+  String _generatePublicKey() =>
+      sha256.convert(utf8.encode(DateTime.now().toString())).toString();
 
-  void _showResponseDialog({
-    required bool success,
-    required String title,
-    required Map<String, dynamic> body,
-  }) {
-    final color = success ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
-    final icon = success ? Icons.check_circle_outline : Icons.error_outline;
+  void _showResponseDialog(BuildContext context,
+      {required bool success,
+      required String title,
+      required Map<String, dynamic> body}) {
+    final color =
+        success ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final icon =
+        success ? Icons.check_circle_outline : Icons.error_outline;
 
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -61,10 +57,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Text(
                       title,
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: color,
-                      ),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: color),
                     ),
                   ),
                   IconButton(
@@ -88,9 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Text(
                     const JsonEncoder.withIndent('  ').convert(body),
                     style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                    ),
+                        fontFamily: 'monospace', fontSize: 12),
                   ),
                 ),
               ),
@@ -99,16 +92,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: color),
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: color),
                     onPressed: () {
                       Navigator.of(ctx).pop();
-                      Navigator.of(context)
-                          .pushNamedAndRemoveUntil('/home', (route) => false);
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                          '/home', (route) => false);
                     },
-                    child: const Text(
-                      'Continue to Home',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    child: const Text('Continue to Home',
+                        style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],
@@ -119,217 +111,174 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Future<void> _handleRegister() async {
+  String? _validate() {
     if (_emailController.text.isEmpty ||
         _usernameController.text.isEmpty ||
         _passwordController.text.isEmpty) {
-      setState(() {
-        _errorMessage = 'All fields are required';
-      });
-      return;
+      return 'All fields are required';
     }
-
     if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() {
-        _errorMessage = 'Passwords do not match';
-      });
-      return;
+      return 'Passwords do not match';
     }
-
     if (_passwordController.text.length < 8) {
-      setState(() {
-        _errorMessage = 'Password must be at least 8 characters';
-      });
-      return;
+      return 'Password must be at least 8 characters';
     }
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final response = await _authService.register(
-        email: _emailController.text.trim(),
-        username: _usernameController.text.trim(),
-        password: _passwordController.text,
-        publicKey: _generatePublicKey(),
-        initialBalance: 1000.0,
-      );
-
-      if (mounted) {
-        _showResponseDialog(
-          success: true,
-          title: 'Account Created',
-          body: response.toJson(),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      if (e is DioException) {
-        final data = e.response?.data;
-        final body = <String, dynamic>{
-          'status': e.response?.statusCode ?? 'N/A',
-          'message': e.message ?? 'Unknown error',
-          if (data is Map) ...Map<String, dynamic>.from(data),
-          if (data is String) 'raw': data,
-        };
-        _showResponseDialog(success: false, title: 'Request Failed', body: body);
-      } else {
-        setState(() {
-          _errorMessage = e.toString();
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Join PayMesh',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Create an account to start making offline payments',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 32),
-
-                // Email Field
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    hintText: 'your@email.com',
-                    labelText: 'Email',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                  ),
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 16),
-
-                // Username Field
-                TextField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    hintText: 'Choose a username',
-                    labelText: 'Username',
-                    prefixIcon: const Icon(Icons.person_outline),
-                  ),
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 16),
-
-                // Password Field
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    hintText: 'Min 8 characters',
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                  ),
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 16),
-
-                // Confirm Password Field
-                TextField(
-                  controller: _confirmPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    hintText: 'Confirm password',
-                    labelText: 'Confirm Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                  ),
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 24),
-
-                // Error Message
-                if (_errorMessage != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      border: Border.all(color: Colors.red),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red, fontSize: 12),
-                    ),
-                  ),
-                if (_errorMessage != null) const SizedBox(height: 16),
-
-                // Register Button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleRegister,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text('Create Account'),
-                ),
-                const SizedBox(height: 16),
-
-                // Login Link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Already have an account? ',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    GestureDetector(
-                      onTap: _isLoading
-                          ? null
-                          : () {
-                              Navigator.of(context).pushReplacementNamed('/login');
-                            },
-                      child: Text(
-                        'Login',
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: const Color(0xFF2563EB),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    return BlocProvider(
+      create: (_) => AuthBloc(),
+      child: BlocConsumer<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is AuthSuccess) {
+            _showResponseDialog(context,
+                success: true,
+                title: state.title,
+                body: state.response.toJson());
+          } else if (state is AuthFailure) {
+            _showResponseDialog(context,
+                success: false, title: state.title, body: state.body);
+          }
+        },
+        builder: (context, state) {
+          final isLoading = state is AuthLoading;
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Create Account'),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
             ),
-          ),
-        ),
+            body: SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text('Join PayMesh',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Create an account to start making offline payments',
+                        style:
+                            Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 32),
+                      TextField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        enabled: !isLoading,
+                        decoration: const InputDecoration(
+                          hintText: 'your@email.com',
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _usernameController,
+                        enabled: !isLoading,
+                        decoration: const InputDecoration(
+                          hintText: 'Choose a username',
+                          labelText: 'Username',
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        enabled: !isLoading,
+                        decoration: const InputDecoration(
+                          hintText: 'Min 8 characters',
+                          labelText: 'Password',
+                          prefixIcon: Icon(Icons.lock_outline),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _confirmPasswordController,
+                        obscureText: true,
+                        enabled: !isLoading,
+                        decoration: const InputDecoration(
+                          hintText: 'Confirm password',
+                          labelText: 'Confirm Password',
+                          prefixIcon: Icon(Icons.lock_outline),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                final error = _validate();
+                                if (error != null) {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                          content: Text(error)));
+                                  return;
+                                }
+                                context.read<AuthBloc>().add(
+                                      RegisterSubmitted(
+                                        email: _emailController.text
+                                            .trim(),
+                                        username: _usernameController
+                                            .text
+                                            .trim(),
+                                        password:
+                                            _passwordController.text,
+                                        publicKey: _generatePublicKey(),
+                                      ),
+                                    );
+                              },
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white),
+                              )
+                            : const Text('Create Account'),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Already have an account? ',
+                              style:
+                                  Theme.of(context).textTheme.bodyMedium),
+                          GestureDetector(
+                            onTap: isLoading
+                                ? null
+                                : () => Navigator.of(context)
+                                    .pushReplacementNamed('/login'),
+                            child: Text(
+                              'Login',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: const Color(0xFF2563EB),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
