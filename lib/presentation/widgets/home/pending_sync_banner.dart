@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../../domain/utils/format_util.dart';
 
 class PendingSyncBanner extends StatelessWidget {
@@ -14,8 +15,8 @@ class PendingSyncBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(12),
+      margin: EdgeInsets.symmetric(horizontal: 4.w),
+      padding: EdgeInsets.all(3.w),
       decoration: BoxDecoration(
         color: const Color(0xFFFEF3C7),
         borderRadius: BorderRadius.circular(12),
@@ -24,24 +25,25 @@ class PendingSyncBanner extends StatelessWidget {
       child: Row(
         children: [
           const Icon(Icons.info, color: Color(0xFFD97706)),
-          const SizedBox(width: 12),
+          SizedBox(width: 3.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Pending Sync',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFD97706),
+                    fontSize: 13.sp,
+                    color: const Color(0xFFD97706),
                   ),
                 ),
                 Text(
                   '$count transactions waiting to sync '
                   '(₦${FormatUtil.formatCurrency(amount)})',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFFB45309),
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: const Color(0xFFB45309),
                   ),
                 ),
               ],

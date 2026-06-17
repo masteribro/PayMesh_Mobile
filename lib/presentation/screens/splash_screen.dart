@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../data/services/auth_service.dart';
-import 'login_screen.dart';
-import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -21,11 +20,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkAuthentication() async {
     await Future.delayed(const Duration(seconds: 2));
-
     if (mounted) {
       final isAuthenticated = await _authService.isAuthenticated();
       final restored = await _authService.restoreSession();
-
       if (isAuthenticated && restored) {
         Navigator.of(context).pushReplacementNamed('/home');
       } else {
@@ -42,10 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF2563EB),
-              Color(0xFF1E40AF),
-            ],
+            colors: [Color(0xFF2563EB), Color(0xFF1E40AF)],
           ),
         ),
         child: Center(
@@ -53,36 +47,36 @@ class _SplashScreenState extends State<SplashScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 80,
-                height: 80,
+                width: 20.w,
+                height: 20.w,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(5.w),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.payment,
-                  size: 48,
-                  color: Color(0xFF2563EB),
+                  size: 12.w,
+                  color: const Color(0xFF2563EB),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
+              SizedBox(height: 3.h),
+              Text(
                 'PayMesh',
                 style: TextStyle(
-                  fontSize: 32,
+                  fontSize: 28.sp,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
+              SizedBox(height: 1.h),
+              Text(
                 'Offline-First Digital Payments',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13.sp,
                   color: Colors.white70,
                 ),
               ),
-              const SizedBox(height: 48),
+              SizedBox(height: 6.h),
               const CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),

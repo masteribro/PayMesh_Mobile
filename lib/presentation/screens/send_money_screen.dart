@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../domain/utils/format_util.dart';
 import '../blocs/send_money/send_money_bloc.dart';
 import '../widgets/section_card.dart';
@@ -61,65 +62,69 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(6.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 16.w,
+              height: 16.w,
               decoration: const BoxDecoration(
                   color: Color(0xFFFEF3C7), shape: BoxShape.circle),
-              child: const Icon(Icons.schedule,
-                  color: Color(0xFFF59E0B), size: 36),
+              child: Icon(Icons.schedule,
+                  color: const Color(0xFFF59E0B), size: 9.w),
             ),
-            const SizedBox(height: 16),
-            const Text('Queued!',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            const Text(
+            SizedBox(height: 2.h),
+            Text('Queued!',
+                style: TextStyle(
+                    fontSize: 20.sp, fontWeight: FontWeight.bold)),
+            SizedBox(height: 0.5.h),
+            Text(
               'Saved locally — will sync when online',
-              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+              style: TextStyle(
+                  color: const Color(0xFF9CA3AF), fontSize: 12.sp),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 1.h),
             Text(
               '₦${FormatUtil.formatCurrencyWithComma(state.offlineAmount ?? 0)}',
-              style: const TextStyle(
-                  fontSize: 32,
+              style: TextStyle(
+                  fontSize: 28.sp,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFD97706)),
+                  color: const Color(0xFFD97706)),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 1.h),
             Text('To: ${state.offlineRecipientName ?? ''}',
-                style: const TextStyle(color: Color(0xFF6B7280))),
-            const SizedBox(height: 4),
+                style: TextStyle(
+                    color: const Color(0xFF6B7280), fontSize: 13.sp)),
+            SizedBox(height: 0.5.h),
             Text(
                 'TX: ${FormatUtil.formatTransactionId(state.offlineTxId ?? '')}',
-                style: const TextStyle(
-                    fontSize: 12, color: Color(0xFF9CA3AF))),
-            const SizedBox(height: 16),
+                style: TextStyle(
+                    fontSize: 11.sp, color: const Color(0xFF9CA3AF))),
+            SizedBox(height: 2.h),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(3.w),
               decoration: BoxDecoration(
                 color: const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFBFDBFE)),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.qr_code_2, color: Color(0xFF2563EB), size: 20),
-                  SizedBox(width: 10),
+                  Icon(Icons.qr_code_2,
+                      color: const Color(0xFF2563EB), size: 5.w),
+                  SizedBox(width: 2.5.w),
                   Expanded(
                     child: Text(
                       'Show a QR so the recipient can receive the funds now — even offline.',
-                      style:
-                          TextStyle(fontSize: 12, color: Color(0xFF1D4ED8)),
+                      style: TextStyle(
+                          fontSize: 11.sp, color: const Color(0xFF1D4ED8)),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 2.h),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -145,7 +150,7 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                 label: const Text('Show Payment QR'),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 1.h),
             SizedBox(
               width: double.infinity,
               child: TextButton(
@@ -165,40 +170,42 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(6.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 16.w,
+              height: 16.w,
               decoration: const BoxDecoration(
                   color: Color(0xFFD1FAE5), shape: BoxShape.circle),
-              child: const Icon(Icons.check_circle,
-                  color: Color(0xFF10B981), size: 36),
+              child: Icon(Icons.check_circle,
+                  color: const Color(0xFF10B981), size: 9.w),
             ),
-            const SizedBox(height: 16),
-            const Text('Sent!',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            const Text(
+            SizedBox(height: 2.h),
+            Text('Sent!',
+                style: TextStyle(
+                    fontSize: 20.sp, fontWeight: FontWeight.bold)),
+            SizedBox(height: 0.5.h),
+            Text(
               'Money transferred successfully',
-              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+              style: TextStyle(
+                  color: const Color(0xFF9CA3AF), fontSize: 12.sp),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 1.h),
             Text(
               '₦${FormatUtil.formatCurrencyWithComma(state.onlineAmount ?? 0)}',
-              style: const TextStyle(
-                  fontSize: 32,
+              style: TextStyle(
+                  fontSize: 28.sp,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF10B981)),
+                  color: const Color(0xFF10B981)),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 0.5.h),
             Text(
                 'TX: ${FormatUtil.formatTransactionId(state.onlineTxId ?? '')}',
-                style: const TextStyle(
-                    fontSize: 12, color: Color(0xFF9CA3AF))),
-            const SizedBox(height: 24),
+                style: TextStyle(
+                    fontSize: 11.sp, color: const Color(0xFF9CA3AF))),
+            SizedBox(height: 3.h),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -245,8 +252,7 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
             _showOfflineSuccessSheet(context, state);
             context.read<SendMoneyBloc>().add(SendMoneyReset());
           case SendMoneyStatus.error:
-            _showError(
-                context, state.errorMessage ?? 'An error occurred');
+            _showError(context, state.errorMessage ?? 'An error occurred');
             context.read<SendMoneyBloc>().add(SendMoneyReset());
           default:
             break;
@@ -257,7 +263,7 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
         return Scaffold(
           appBar: AppBar(title: const Text('Send Money')),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(4.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -274,14 +280,13 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                       icon: const Icon(Icons.qr_code_scanner),
                       label: const Text('Scan QR Code'),
                       style: ElevatedButton.styleFrom(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 12),
+                        padding: EdgeInsets.symmetric(vertical: 1.5.h),
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: 2.h),
 
                 SectionCard(
                   icon: Icons.broadcast_on_personal,
@@ -300,7 +305,7 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                             color: state.isAdvertising
                                 ? const Color(0xFF16A34A)
                                 : const Color(0xFF6B7280),
-                            fontSize: 13,
+                            fontSize: 12.sp,
                           ),
                         ),
                       ),
@@ -315,7 +320,7 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: 2.h),
 
                 SectionCard(
                   icon: Icons.person_search,
@@ -335,10 +340,10 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                                   .read<SendMoneyBloc>()
                                   .add(BleScanStarted()),
                           icon: state.isScanning
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
+                              ? SizedBox(
+                                  width: 4.w,
+                                  height: 4.w,
+                                  child: const CircularProgressIndicator(
                                       strokeWidth: 2,
                                       color: Colors.white))
                               : const Icon(Icons.bluetooth_searching),
@@ -346,17 +351,17 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                               ? 'Scanning…'
                               : 'Scan for Nearby'),
                           style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12)),
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 1.5.h)),
                         ),
                       ),
                       if (state.nearbyDevices.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        const Text('Nearby PayMesh Users:',
+                        SizedBox(height: 1.5.h),
+                        Text('Nearby PayMesh Users:',
                             style: TextStyle(
                                 fontWeight: FontWeight.w600,
-                                fontSize: 13)),
-                        const SizedBox(height: 8),
+                                fontSize: 12.sp)),
+                        SizedBox(height: 1.h),
                         ...state.nearbyDevices.map((d) {
                           final isSelected =
                               state.recipientId == d.userId;
@@ -368,12 +373,13 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: CircleAvatar(
+                              radius: 5.w,
                               backgroundColor: const Color(0xFF2563EB)
                                   .withValues(alpha: 0.1),
                               child: Text(initials,
-                                  style: const TextStyle(
-                                      color: Color(0xFF2563EB),
-                                      fontSize: 12)),
+                                  style: TextStyle(
+                                      color: const Color(0xFF2563EB),
+                                      fontSize: 11.sp)),
                             ),
                             title: Text(d.displayName,
                                 style: const TextStyle(
@@ -392,23 +398,24 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                           );
                         }),
                       ] else if (!state.isScanning)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 12),
+                        Padding(
+                          padding: EdgeInsets.only(top: 1.5.h),
                           child: Text(
                             'No PayMesh devices found. Make sure the recipient has "Be Discoverable" turned on.',
                             style: TextStyle(
-                                color: Color(0xFF9CA3AF), fontSize: 12),
+                                color: const Color(0xFF9CA3AF),
+                                fontSize: 11.sp),
                           ),
                         ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: 2.h),
 
                 if (state.recipientId != null) ...[
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(3.w),
                     decoration: BoxDecoration(
                       color: const Color(0xFFD1FAE5),
                       borderRadius: BorderRadius.circular(12),
@@ -417,29 +424,30 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                       children: [
                         const Icon(Icons.check_circle,
                             color: Color(0xFF10B981)),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 2.w),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Recipient: ${state.recipientName ?? 'Selected'}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF065F46)),
+                                    fontSize: 13.sp,
+                                    color: const Color(0xFF065F46)),
                               ),
                               Text(
                                 FormatUtil.formatUserId(state.recipientId!),
-                                style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF047857)),
+                                style: TextStyle(
+                                    fontSize: 11.sp,
+                                    color: const Color(0xFF047857)),
                               ),
                             ],
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close,
-                              color: Color(0xFF047857), size: 18),
+                          icon: Icon(Icons.close,
+                              color: const Color(0xFF047857), size: 4.5.w),
                           onPressed: () => context
                               .read<SendMoneyBloc>()
                               .add(RecipientCleared()),
@@ -447,27 +455,27 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text('Amount',
+                  SizedBox(height: 2.h),
+                  Text('Amount',
                       style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 15.sp,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1F2937))),
-                  const SizedBox(height: 8),
+                          color: const Color(0xFF1F2937))),
+                  SizedBox(height: 1.h),
                   TextField(
                     controller: _amountController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: '0.00',
                       prefixText: '₦ ',
                       prefixStyle: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16.sp,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF2563EB)),
+                          color: const Color(0xFF2563EB)),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                         decimal: true),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 2.h),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -481,35 +489,37 @@ class _SendMoneyViewState extends State<_SendMoneyView> {
                                     context, 'Enter a valid amount.');
                                 return;
                               }
-                              context.read<SendMoneyBloc>().add(
-                                  SendMoneySubmitted(amount));
+                              context
+                                  .read<SendMoneyBloc>()
+                                  .add(SendMoneySubmitted(amount));
                             },
                       style: ElevatedButton.styleFrom(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 16)),
+                          padding: EdgeInsets.symmetric(vertical: 2.h)),
                       child: isSubmitting
                           ? const SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2, color: Colors.white))
-                          : const Text('Send Money',
+                          : Text('Send Money',
                               style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 15.sp,
                                   fontWeight: FontWeight.w600)),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Row(
+                  SizedBox(height: 1.h),
+                  Row(
                     children: [
                       Icon(Icons.info_outline,
-                          size: 14, color: Color(0xFF9CA3AF)),
-                      SizedBox(width: 4),
+                          size: 3.5.w,
+                          color: const Color(0xFF9CA3AF)),
+                      SizedBox(width: 1.w),
                       Expanded(
                         child: Text(
                           'Online: transferred instantly. Offline: saved locally and synced when network returns.',
                           style: TextStyle(
-                              fontSize: 11, color: Color(0xFF9CA3AF)),
+                              fontSize: 10.sp,
+                              color: const Color(0xFF9CA3AF)),
                         ),
                       ),
                     ],

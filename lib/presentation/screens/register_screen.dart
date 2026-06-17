@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../blocs/auth/auth_bloc.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -44,7 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(5.w),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,13 +53,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Row(
                 children: [
                   Icon(icon, color: color, size: 22),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 2.w),
                   Expanded(
                     child: Text(
                       title,
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 15.sp,
                           color: color),
                     ),
                   ),
@@ -70,10 +71,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 1.5.h),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(3.w),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
@@ -82,13 +83,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: SingleChildScrollView(
                   child: Text(
                     const JsonEncoder.withIndent('  ').convert(body),
-                    style: const TextStyle(
-                        fontFamily: 'monospace', fontSize: 12),
+                    style: TextStyle(
+                        fontFamily: 'monospace', fontSize: 11.sp),
                   ),
                 ),
               ),
               if (success) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: 2.h),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -155,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             body: SafeArea(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(6.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -163,13 +164,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: Theme.of(context)
                               .textTheme
                               .headlineMedium),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 1.h),
                       Text(
                         'Create an account to start making offline payments',
-                        style:
-                            Theme.of(context).textTheme.bodyMedium,
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 4.h),
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
@@ -180,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           prefixIcon: Icon(Icons.email_outlined),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 2.h),
                       TextField(
                         controller: _usernameController,
                         enabled: !isLoading,
@@ -190,7 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           prefixIcon: Icon(Icons.person_outline),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 2.h),
                       TextField(
                         controller: _passwordController,
                         obscureText: true,
@@ -201,7 +201,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           prefixIcon: Icon(Icons.lock_outline),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 2.h),
                       TextField(
                         controller: _confirmPasswordController,
                         obscureText: true,
@@ -212,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           prefixIcon: Icon(Icons.lock_outline),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 3.h),
                       ElevatedButton(
                         onPressed: isLoading
                             ? null
@@ -247,13 +247,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               )
                             : const Text('Create Account'),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 2.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text('Already have an account? ',
-                              style:
-                                  Theme.of(context).textTheme.bodyMedium),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium),
                           GestureDetector(
                             onTap: isLoading
                                 ? null

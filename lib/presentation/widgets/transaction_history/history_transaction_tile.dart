@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../domain/utils/format_util.dart';
 
@@ -52,18 +53,18 @@ class HistoryTransactionTile extends StatelessWidget {
     final isSent = transaction.senderId == currentUserId;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
       child: Card(
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(3.w),
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 12.w,
+                  height: 12.w,
                   decoration: BoxDecoration(
                     color: isSent
                         ? const Color(0xFFEF4444).withValues(alpha: 0.1)
@@ -75,9 +76,10 @@ class HistoryTransactionTile extends StatelessWidget {
                     color: isSent
                         ? const Color(0xFFEF4444)
                         : const Color(0xFF10B981),
+                    size: 5.w,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 3.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,20 +88,21 @@ class HistoryTransactionTile extends StatelessWidget {
                         isSent
                             ? 'Sent to ${FormatUtil.formatUserId(transaction.receiverId)}'
                             : 'Received from ${FormatUtil.formatUserId(transaction.senderId)}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 13.sp),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 0.5.h),
                       Text(
                         FormatUtil.formatDateTime(transaction.timestamp),
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: TextStyle(
+                            fontSize: 11.sp, color: Colors.grey[500]),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 0.5.h),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 2.w, vertical: 0.3.h),
                         decoration: BoxDecoration(
                           color: _statusBgColor,
                           borderRadius: BorderRadius.circular(4),
@@ -107,7 +110,7 @@ class HistoryTransactionTile extends StatelessWidget {
                         child: Text(
                           _statusLabel,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 9.sp,
                             fontWeight: FontWeight.w600,
                             color: _statusTextColor,
                           ),
@@ -116,7 +119,7 @@ class HistoryTransactionTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 3.w),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -124,15 +127,15 @@ class HistoryTransactionTile extends StatelessWidget {
                       '${isSent ? '-' : '+'}₦${FormatUtil.formatCurrency(transaction.amount)}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 13.sp,
                         color: isSent
                             ? const Color(0xFFEF4444)
                             : const Color(0xFF10B981),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 0.5.h),
                     Icon(Icons.chevron_right,
-                        color: Colors.grey[400], size: 20),
+                        color: Colors.grey[400], size: 5.w),
                   ],
                 ),
               ],

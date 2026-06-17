@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../../data/models/transaction_model.dart';
 import '../../../domain/utils/format_util.dart';
 
@@ -27,7 +28,7 @@ class _StatusBadge extends StatelessWidget {
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.3.h),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(4),
@@ -35,7 +36,7 @@ class _StatusBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 9.sp,
           fontWeight: FontWeight.w600,
           color: fg,
         ),
@@ -59,12 +60,12 @@ class TransactionListTile extends StatelessWidget {
     final isSent = transaction.senderId == currentUserId;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
       child: Card(
         child: ListTile(
           leading: Container(
-            width: 48,
-            height: 48,
+            width: 12.w,
+            height: 12.w,
             decoration: BoxDecoration(
               color: isSent
                   ? const Color(0xFFEF4444).withValues(alpha: 0.1)
@@ -76,17 +77,19 @@ class TransactionListTile extends StatelessWidget {
               color: isSent
                   ? const Color(0xFFEF4444)
                   : const Color(0xFF10B981),
+              size: 5.w,
             ),
           ),
           title: Text(
             isSent
                 ? 'Sent to ${FormatUtil.formatUserId(transaction.receiverId)}'
                 : 'Received from ${FormatUtil.formatUserId(transaction.senderId)}',
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(
+                fontWeight: FontWeight.w600, fontSize: 13.sp),
           ),
           subtitle: Text(
             FormatUtil.formatDateTime(transaction.timestamp),
-            style: const TextStyle(fontSize: 12),
+            style: TextStyle(fontSize: 11.sp),
           ),
           trailing: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -96,6 +99,7 @@ class TransactionListTile extends StatelessWidget {
                 '${isSent ? '-' : '+'}₦${FormatUtil.formatCurrency(transaction.amount)}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
+                  fontSize: 13.sp,
                   color: isSent
                       ? const Color(0xFFEF4444)
                       : const Color(0xFF10B981),

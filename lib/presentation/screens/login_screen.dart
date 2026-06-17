@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../blocs/auth/auth_bloc.dart';
 import 'register_screen.dart';
 
@@ -37,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(5.w),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,13 +46,13 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 children: [
                   Icon(icon, color: color, size: 22),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 2.w),
                   Expanded(
                     child: Text(
                       title,
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 15.sp,
                           color: color),
                     ),
                   ),
@@ -63,10 +64,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 1.5.h),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(3.w),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
@@ -75,13 +76,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: SingleChildScrollView(
                   child: Text(
                     const JsonEncoder.withIndent('  ').convert(body),
-                    style: const TextStyle(
-                        fontFamily: 'monospace', fontSize: 12),
+                    style: TextStyle(
+                        fontFamily: 'monospace', fontSize: 11.sp),
                   ),
                 ),
               ),
               if (success) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: 2.h),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -126,14 +127,12 @@ class _LoginScreenState extends State<LoginScreen> {
             body: SafeArea(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(6.w),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(
-                          height:
-                              MediaQuery.of(context).size.height * 0.1),
+                      SizedBox(height: 10.h),
                       Text(
                         'PayMesh',
                         textAlign: TextAlign.center,
@@ -145,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 1.h),
                       Text(
                         'Offline-First Digital Payments',
                         textAlign: TextAlign.center,
@@ -154,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             .bodyLarge
                             ?.copyWith(color: const Color(0xFF6B7280)),
                       ),
-                      const SizedBox(height: 48),
+                      SizedBox(height: 6.h),
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
@@ -165,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           prefixIcon: Icon(Icons.email_outlined),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 2.h),
                       TextField(
                         controller: _passwordController,
                         obscureText: true,
@@ -176,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           prefixIcon: Icon(Icons.lock_outline),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 3.h),
                       ElevatedButton(
                         onPressed: isLoading
                             ? null
@@ -209,13 +208,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               )
                             : const Text('Login'),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 2.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text("Don't have an account? ",
-                              style:
-                                  Theme.of(context).textTheme.bodyMedium),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium),
                           GestureDetector(
                             onTap: isLoading
                                 ? null

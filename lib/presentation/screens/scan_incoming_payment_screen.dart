@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/incoming_transaction_service.dart';
 import '../../domain/utils/format_util.dart';
@@ -51,7 +52,8 @@ class _ScanIncomingPaymentScreenState
     }
 
     if (data['type'] != 'paymesh_payment') {
-      _showError('This is not a payment QR. Use "Scan Recipient QR" to find people to pay.');
+      _showError(
+          'This is not a payment QR. Use "Scan Recipient QR" to find people to pay.');
       return;
     }
 
@@ -81,7 +83,7 @@ class _ScanIncomingPaymentScreenState
       id: id,
       senderId: senderId,
       senderName: senderName,
-      receiverId: receiverId ?? "",
+      receiverId: receiverId ?? '',
       amount: amount,
       timestamp: timestamp,
       signature: signature,
@@ -97,7 +99,6 @@ class _ScanIncomingPaymentScreenState
         duration: const Duration(seconds: 3),
       ),
     );
-    // Reset scan after showing error so user can try again
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) setState(() => _scanned = false);
     });
@@ -133,13 +134,13 @@ class _ScanIncomingPaymentScreenState
             signature: signature,
           );
           if (mounted) {
-            Navigator.pop(context); // close sheet
-            Navigator.pop(context, true); // return to caller with success
+            Navigator.pop(context);
+            Navigator.pop(context, true);
           }
         },
         onReject: () {
-          Navigator.pop(context); // close sheet only
-          setState(() => _scanned = false); // allow re-scan
+          Navigator.pop(context);
+          setState(() => _scanned = false);
         },
       ),
     );
@@ -155,7 +156,8 @@ class _ScanIncomingPaymentScreenState
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(_torchOn ? Icons.flashlight_on : Icons.flashlight_off),
+            icon:
+                Icon(_torchOn ? Icons.flashlight_on : Icons.flashlight_off),
             tooltip: 'Toggle torch',
             onPressed: _toggleTorch,
           ),
@@ -171,16 +173,15 @@ class _ScanIncomingPaymentScreenState
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              margin: const EdgeInsets.only(bottom: 60),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              margin: EdgeInsets.only(bottom: 8.h),
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 1.5.h),
               decoration: BoxDecoration(
                 color: Colors.black54,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
+              child: Text(
                 'Point at the sender\'s Payment QR code',
-                style: TextStyle(color: Colors.white, fontSize: 14),
+                style: TextStyle(color: Colors.white, fontSize: 13.sp),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -209,71 +210,74 @@ class _ConfirmSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(6.w),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 16.w,
+            height: 16.w,
             decoration: const BoxDecoration(
               color: Color(0xFFD1FAE5),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_downward,
-              color: Color(0xFF10B981),
-              size: 36,
+              color: const Color(0xFF10B981),
+              size: 9.w,
             ),
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 2.h),
+          Text(
             'Incoming Payment',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style:
+                TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 1.h),
           Text(
             'From: $senderName',
-            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+            style: TextStyle(
+                color: const Color(0xFF6B7280), fontSize: 13.sp),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 1.5.h),
           Text(
             '₦${FormatUtil.formatCurrencyWithComma(amount)}',
-            style: const TextStyle(
-              fontSize: 36,
+            style: TextStyle(
+              fontSize: 32.sp,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF10B981),
+              color: const Color(0xFF10B981),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 0.5.h),
           Text(
             'TX: ${FormatUtil.formatTransactionId(txId)}',
-            style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+            style:
+                TextStyle(fontSize: 10.sp, color: const Color(0xFF9CA3AF)),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 1.5.h),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(3.w),
             decoration: BoxDecoration(
               color: const Color(0xFFFEF3C7),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(Icons.info_outline,
-                    size: 14, color: Color(0xFFF59E0B)),
-                SizedBox(width: 8),
+                    size: 3.5.w, color: const Color(0xFFF59E0B)),
+                SizedBox(width: 2.w),
                 Expanded(
                   child: Text(
                     'Funds are pending — will be confirmed when either '
                     'party syncs to the server.',
                     style: TextStyle(
-                        fontSize: 11, color: Color(0xFFB45309)),
+                        fontSize: 10.sp, color: const Color(0xFFB45309)),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 3.h),
           Row(
             children: [
               Expanded(
@@ -281,20 +285,20 @@ class _ConfirmSheet extends StatelessWidget {
                   onPressed: onReject,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFEF4444),
-                    side:
-                        const BorderSide(color: Color(0xFFEF4444), width: 2),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(
+                        color: Color(0xFFEF4444), width: 2),
+                    padding: EdgeInsets.symmetric(vertical: 1.8.h),
                   ),
                   child: const Text('Reject'),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 3.w),
               Expanded(
                 child: ElevatedButton(
                   onPressed: onAccept,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: 1.8.h),
                   ),
                   child: const Text('Accept'),
                 ),

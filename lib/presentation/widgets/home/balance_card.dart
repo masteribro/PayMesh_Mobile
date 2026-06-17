@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../../data/dto/auth_response.dart';
 import '../../../domain/utils/format_util.dart';
 
@@ -12,8 +13,8 @@ class BalanceCard extends StatelessWidget {
     final available = user.balance - user.pendingOfflineAmount;
 
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(24),
+      margin: EdgeInsets.all(4.w),
+      padding: EdgeInsets.all(6.w),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -34,50 +35,52 @@ class BalanceCard extends StatelessWidget {
         children: [
           Text(
             'Welcome, ${user.username}',
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white70,
-              fontSize: 14,
+              fontSize: 13.sp,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 4),
-          const Text(
+          SizedBox(height: 0.5.h),
+          Text(
             'Total Balance',
-            style: TextStyle(color: Colors.white70, fontSize: 12),
+            style: TextStyle(color: Colors.white70, fontSize: 11.sp),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 1.h),
           Text(
             '₦${FormatUtil.formatCurrencyWithComma(user.balance)}',
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 36,
+              fontSize: 30.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 2.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Available',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                    style: TextStyle(
+                        color: Colors.white70, fontSize: 11.sp),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 0.5.h),
                   Text(
                     '₦${FormatUtil.formatCurrency(available)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 3.w, vertical: 1.h),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
@@ -85,16 +88,17 @@ class BalanceCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Pending',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                      style: TextStyle(
+                          color: Colors.white70, fontSize: 11.sp),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 0.5.h),
                     Text(
                       '₦${FormatUtil.formatCurrency(user.pendingOfflineAmount)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

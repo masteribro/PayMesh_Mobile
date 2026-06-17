@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../widgets/scanner_overlay.dart';
 
 class QrScannerScreen extends StatefulWidget {
@@ -60,7 +61,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(_torchOn ? Icons.flashlight_on : Icons.flashlight_off),
+            icon:
+                Icon(_torchOn ? Icons.flashlight_on : Icons.flashlight_off),
             tooltip: 'Toggle torch',
             onPressed: _toggleTorch,
           ),
@@ -76,15 +78,16 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              margin: const EdgeInsets.only(bottom: 60),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              margin: EdgeInsets.only(bottom: 8.h),
+              padding:
+                  EdgeInsets.symmetric(horizontal: 8.w, vertical: 1.5.h),
               decoration: BoxDecoration(
                 color: Colors.black54,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
+              child: Text(
                 'Point at a PayMesh QR code to set the recipient',
-                style: TextStyle(color: Colors.white, fontSize: 14),
+                style: TextStyle(color: Colors.white, fontSize: 13.sp),
                 textAlign: TextAlign.center,
               ),
             ),

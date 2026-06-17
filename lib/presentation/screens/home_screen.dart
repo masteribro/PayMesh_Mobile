@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../domain/utils/format_util.dart';
 import '../blocs/home/home_bloc.dart';
 import '../widgets/home/balance_card.dart';
@@ -42,37 +43,38 @@ class _HomeView extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(6.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'My QR Code',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 0.5.h),
             Text(
               'Let others scan this to send you money',
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 3.h),
             QrImageView(
               data: qrData,
               version: QrVersions.auto,
-              size: 220,
+              size: 55.w,
               backgroundColor: Colors.white,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 2.h),
             Text(
               user.username,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style:
+                  TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 0.5.h),
             Text(
               user.email,
-              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 12.sp, color: Colors.grey[500]),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 3.h),
           ],
         ),
       ),
@@ -91,10 +93,10 @@ class _HomeView extends StatelessWidget {
       ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          left: 6.w,
+          right: 6.w,
+          top: 3.h,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 3.h,
         ),
         child: Form(
           key: formKey,
@@ -105,9 +107,10 @@ class _HomeView extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Top Up Balance',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: 18.sp, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(ctx),
@@ -115,12 +118,13 @@ class _HomeView extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 1.h),
               Text(
                 'Current balance: ₦${FormatUtil.formatCurrencyWithComma(state.user?.balance ?? 0)}',
-                style: const TextStyle(color: Color(0xFF6B7280)),
+                style: TextStyle(
+                    fontSize: 13.sp, color: const Color(0xFF6B7280)),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 2.5.h),
               TextFormField(
                 controller: amountController,
                 keyboardType:
@@ -138,25 +142,25 @@ class _HomeView extends StatelessWidget {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 2.h),
               Row(
                 children: [
                   for (final preset in [100.0, 500.0, 1000.0])
                     Padding(
-                      padding: const EdgeInsets.only(right: 8),
+                      padding: EdgeInsets.only(right: 2.w),
                       child: OutlinedButton(
-                        onPressed: () =>
-                            amountController.text = preset.toStringAsFixed(0),
+                        onPressed: () => amountController.text =
+                            preset.toStringAsFixed(0),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 4.w, vertical: 1.h),
                         ),
                         child: Text('₦${preset.toStringAsFixed(0)}'),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 2.5.h),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -197,10 +201,8 @@ class _HomeView extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Logout',
-              style: TextStyle(color: Color(0xFFEF4444)),
-            ),
+            child: const Text('Logout',
+                style: TextStyle(color: Color(0xFFEF4444))),
           ),
         ],
       ),
@@ -260,11 +262,11 @@ class _HomeView extends StatelessWidget {
             elevation: 0,
             actions: [
               Padding(
-                padding: const EdgeInsets.only(left: 8),
+                padding: EdgeInsets.only(left: 2.w),
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 2.5.w, vertical: 0.5.h),
                     decoration: BoxDecoration(
                       color: state.isOnline
                           ? const Color(0xFF10B981)
@@ -273,9 +275,9 @@ class _HomeView extends StatelessWidget {
                     ),
                     child: Text(
                       state.isOnline ? '✓ Online' : '📡 Offline',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -325,8 +327,8 @@ class _HomeView extends StatelessWidget {
                       children: [
                         if (state.error != null)
                           Container(
-                            margin: const EdgeInsets.all(16),
-                            padding: const EdgeInsets.all(12),
+                            margin: EdgeInsets.all(4.w),
+                            padding: EdgeInsets.all(3.w),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFECACA),
                               borderRadius: BorderRadius.circular(12),
@@ -335,7 +337,7 @@ class _HomeView extends StatelessWidget {
                               children: [
                                 const Icon(Icons.error_outline,
                                     color: Color(0xFFDC2626)),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 2.w),
                                 Text(
                                   state.error!,
                                   style: const TextStyle(
@@ -349,8 +351,7 @@ class _HomeView extends StatelessWidget {
                           BalanceCard(user: state.user!),
 
                         Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 16),
+                          padding: EdgeInsets.symmetric(horizontal: 4.w),
                           child: Column(
                             children: [
                               Row(
@@ -362,13 +363,12 @@ class _HomeView extends StatelessWidget {
                                       icon: const Icon(Icons.qr_code),
                                       label: const Text('My QR'),
                                       style: ElevatedButton.styleFrom(
-                                        padding:
-                                            const EdgeInsets.symmetric(
-                                                vertical: 12),
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 1.5.h),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  SizedBox(width: 3.w),
                                   Expanded(
                                     child: OutlinedButton.icon(
                                       onPressed: state.isOnline
@@ -378,11 +378,11 @@ class _HomeView extends StatelessWidget {
                                           : null,
                                       icon: state.syncStatus ==
                                               HomeSyncStatus.syncing
-                                          ? const SizedBox(
-                                              width: 16,
-                                              height: 16,
+                                          ? SizedBox(
+                                              width: 4.w,
+                                              height: 4.w,
                                               child:
-                                                  CircularProgressIndicator(
+                                                  const CircularProgressIndicator(
                                                       strokeWidth: 2),
                                             )
                                           : const Icon(Icons.sync),
@@ -391,7 +391,7 @@ class _HomeView extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 10),
+                              SizedBox(height: 1.5.h),
                               SizedBox(
                                 width: double.infinity,
                                 child: OutlinedButton.icon(
@@ -400,8 +400,8 @@ class _HomeView extends StatelessWidget {
                                   icon: const Icon(Icons.qr_code_scanner),
                                   label: const Text('Scan Payment QR'),
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: 1.5.h),
                                   ),
                                 ),
                               ),
@@ -409,7 +409,7 @@ class _HomeView extends StatelessWidget {
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: 3.h),
 
                         if ((state.user?.pendingOfflineTransactionCount ??
                                 0) >
@@ -417,16 +417,15 @@ class _HomeView extends StatelessWidget {
                           PendingSyncBanner(
                             count: state
                                 .user!.pendingOfflineTransactionCount,
-                            amount:
-                                state.user!.pendingOfflineAmount,
+                            amount: state.user!.pendingOfflineAmount,
                           ),
 
                         if (state.incomingPendingAmount > 0) ...[
-                          const SizedBox(height: 8),
+                          SizedBox(height: 1.h),
                           Container(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 16),
-                            padding: const EdgeInsets.all(12),
+                            margin:
+                                EdgeInsets.symmetric(horizontal: 4.w),
+                            padding: EdgeInsets.all(3.w),
                             decoration: BoxDecoration(
                               color: const Color(0xFFD1FAE5),
                               borderRadius: BorderRadius.circular(12),
@@ -437,24 +436,25 @@ class _HomeView extends StatelessWidget {
                               children: [
                                 const Icon(Icons.arrow_downward,
                                     color: Color(0xFF10B981)),
-                                const SizedBox(width: 12),
+                                SizedBox(width: 3.w),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
+                                      Text(
                                         'Incoming (Pending)',
                                         style: TextStyle(
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFF065F46),
+                                          fontSize: 13.sp,
+                                          color: const Color(0xFF065F46),
                                         ),
                                       ),
                                       Text(
                                         '₦${FormatUtil.formatCurrency(state.incomingPendingAmount)} — sync to confirm',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF047857),
+                                        style: TextStyle(
+                                          fontSize: 11.sp,
+                                          color: const Color(0xFF047857),
                                         ),
                                       ),
                                     ],
@@ -465,19 +465,18 @@ class _HomeView extends StatelessWidget {
                           ),
                         ],
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: 3.h),
 
                         Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 16),
+                          padding: EdgeInsets.symmetric(horizontal: 4.w),
                           child: Row(
                             mainAxisAlignment:
                                 MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 'Recent Transactions',
                                 style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 16.sp,
                                     fontWeight: FontWeight.bold),
                               ),
                               TextButton(
@@ -488,22 +487,22 @@ class _HomeView extends StatelessWidget {
                           ),
                         ),
 
-                        const SizedBox(height: 12),
+                        SizedBox(height: 1.5.h),
 
                         if (state.recentTransactions.isEmpty)
                           Padding(
-                            padding: const EdgeInsets.all(32),
+                            padding: EdgeInsets.all(8.w),
                             child: Column(
                               children: [
                                 Icon(Icons.check_circle_outline,
-                                    size: 64,
+                                    size: 16.w,
                                     color: Colors.grey[300]),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 1.5.h),
                                 Text(
                                   'No transactions yet',
                                   style: TextStyle(
                                       color: Colors.grey[500],
-                                      fontSize: 14),
+                                      fontSize: 13.sp),
                                 ),
                               ],
                             ),
@@ -524,7 +523,7 @@ class _HomeView extends StatelessWidget {
                             ),
                           ),
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: 3.h),
                       ],
                     ),
                   ),

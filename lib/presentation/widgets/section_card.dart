@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 
 class SectionCard extends StatelessWidget {
   final IconData icon;
@@ -21,7 +22,7 @@ class SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(12),
@@ -32,24 +33,25 @@ class SectionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: const Color(0xFF2563EB), size: 20),
-              const SizedBox(width: 8),
+              Icon(icon, color: const Color(0xFF2563EB), size: 5.w),
+              SizedBox(width: 2.w),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  color: Color(0xFF1F2937),
+                  fontSize: 13.sp,
+                  color: const Color(0xFF1F2937),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 0.5.h),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+            style: TextStyle(
+                fontSize: 11.sp, color: const Color(0xFF6B7280)),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 1.5.h),
           child,
         ],
       ),

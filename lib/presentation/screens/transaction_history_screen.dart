@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../data/models/transaction_model.dart';
 import '../../domain/utils/format_util.dart';
 import '../blocs/transaction_history/transaction_history_bloc.dart';
@@ -27,7 +28,7 @@ class _TransactionHistoryView extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       builder: (_) => Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(5.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,9 +36,10 @@ class _TransactionHistoryView extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Transaction Details',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 16.sp, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
@@ -45,9 +47,9 @@ class _TransactionHistoryView extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 2.h),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(4.w),
               decoration: BoxDecoration(
                 color: const Color(0xFFF0F9FF),
                 borderRadius: BorderRadius.circular(12),
@@ -56,7 +58,7 @@ class _TransactionHistoryView extends StatelessWidget {
                 child: Text(
                   '${isSent ? '-' : '+'}₦${FormatUtil.formatCurrency(tx.amount)}',
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 28.sp,
                     fontWeight: FontWeight.bold,
                     color: isSent
                         ? const Color(0xFFEF4444)
@@ -65,7 +67,7 @@ class _TransactionHistoryView extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 2.5.h),
             _DetailRow(
                 label: 'Transaction ID',
                 value: FormatUtil.formatTransactionId(tx.id)),
@@ -87,7 +89,7 @@ class _TransactionHistoryView extends StatelessWidget {
               _DetailRow(
                   label: 'Synced At',
                   value: FormatUtil.formatDateTime(tx.syncedAt!)),
-            const SizedBox(height: 16),
+            SizedBox(height: 2.h),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -162,13 +164,14 @@ class _FilterBar extends StatelessWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
       child: Row(
         children: [
           for (var i = 0; i < filters.length; i++) ...[
-            if (i > 0) const SizedBox(width: 8),
+            if (i > 0) SizedBox(width: 2.w),
             FilterChip(
-              label: Text(labels[i]),
+              label: Text(labels[i],
+                  style: TextStyle(fontSize: 12.sp)),
               selected: selected == filters[i],
               onSelected: (_) => onSelected(filters[i]),
               backgroundColor: Colors.transparent,
@@ -183,6 +186,7 @@ class _FilterBar extends StatelessWidget {
                     ? const Color(0xFF2563EB)
                     : Colors.grey[600],
                 fontWeight: FontWeight.w600,
+                fontSize: 12.sp,
               ),
             ),
           ],
@@ -201,20 +205,20 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox, size: 64, color: Colors.grey[300]),
-          const SizedBox(height: 16),
+          Icon(Icons.inbox, size: 16.w, color: Colors.grey[300]),
+          SizedBox(height: 2.h),
           Text(
             'No transactions found',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 15.sp,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 1.h),
           Text(
             'Start by sending or receiving money',
-            style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+            style: TextStyle(fontSize: 11.sp, color: Colors.grey[400]),
           ),
         ],
       ),
@@ -231,18 +235,19 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 1.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+            style: TextStyle(
+                color: const Color(0xFF6B7280), fontSize: 13.sp),
           ),
           Text(
             value,
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 14),
+            style: TextStyle(
+                fontWeight: FontWeight.w600, fontSize: 13.sp),
           ),
         ],
       ),
